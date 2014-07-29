@@ -37,7 +37,7 @@ mapAtLoc map loc = item (car loc) (item (cdr loc) map);
 
 -- is a junction?
 isjunction world pos =
-	junctionhelper (fields world) 0;
+	junctionhelper (fieldsat world pos) 0;
 
 junctionhelper fields empty =
 	if empty > 2
@@ -49,12 +49,16 @@ junctionhelper fields empty =
 				else junctionhelper (cdr fields) (empty + 1);
 
 nextpos world pos last =
-	move (poshelper (nearfields world pos last)) (car pos) (cdr pos);
+	let near = nearfields world pos last in
+	poshelper (wMap world) near pos;
 
-poshelper fields =
-	if (item 0 (car fields)) == 0
-		then poshelper (cdr fields)
-		else (item 2 (car fields));
+poshelper map near pos =
+	if atom near
+		then move near (car pos) (cdr pos)
+		else let loc = move (car near) (car pos) (cdr pos)
+			in if (mapAtLoc map loc) == 0
+				then poshelper map (cdr near) pos
+				else loc;
 
 -- type State = ( [Int] , (Direction, Int) )
 stGhostspeeds state = car state;
@@ -105,7 +109,12 @@ directionhelp state world =
 -- list of adjacent locations
 fields world =
 	let x = car (lmLocation (wLambda world));
-	    y = cdr (lmLocation (wLambda world));
+	    y = cdr (lmLocation (wLambda world))
+	in fieldsat world (x:y);
+
+fieldsat world pos =
+	let x = car pos;
+	    y = cdr pos;
 	    map = wMap world;
 	    ghosts = wGhosts world
 	in [field ghosts map x (y - 1) 0,
@@ -113,25 +122,18 @@ fields world =
             field ghosts map x (y + 1) 2,
             field ghosts map (x - 1) y 3];
 
--- TODO de-duplicate code
 nearfields world pos last =
 	let x = car pos;
 	    y = cdr pos;
-	    map = wMap world;
-	    ghosts = wGhosts world
-	in sort pos last [field ghosts map x (y - 1) 0,
-            field ghosts map (x + 1) y 1,
-            field ghosts map x (y + 1) 2,
-            field ghosts map (x - 1) y 3];
-
-sort pos last fields =
-	if (car pos) > (car last)
-		then order 0 1 2 1 fields
-		else if (car last) > (car pos)
-			then order 2 3 0 3 fields
-			else if (cdr pos) > (cdr last)
-				then order 1 2 3 2 fields
-				else order 3 0 1 0 fields;
+	    prevx = car last;
+	    prevy = cdr last
+	in if x > prevx
+		then 0:1:2
+		else if prevx > x
+			then 2:3:0
+			else if y > prevy
+				then 1:2:3
+				else 3:0:1;
 
 field ghosts map x y dir =
 	mapAt map x y : isGhost map ghosts x y : dir;
@@ -142,11 +144,10 @@ isGhost map ghosts x y =
     0 -- false
   else
     let gx = car (gLocation (car ghosts));
-        gy = cdr (gLocation (car ghosts));
-        gd = gDirection (car ghosts)
+        gy = cdr (gLocation (car ghosts))
     in
        (gx == x && gy == y)
-       || ghostface map gd x y gx gy
+       || nextto x y gx gy
        || isGhost map (cdr ghosts) x y;
 
 -- TODO de-duplicate code
@@ -159,19 +160,8 @@ isGhostInField map ghosts x y =
         	gy = cdr (gLocation (car ghosts));
         	gd = gDirection (car ghosts)
     		in if (gx == x && gy == y)
-			then 1:(gDirection (car ghosts))
+			then 1:gd
        		 	else isGhostInField map (cdr ghosts) x y;
-
--- can ghost move onto location?
-ghostface map front x y ghostx ghosty =
-	let face = move front ghostx ghosty
-	in
-         if mapAtLoc map face == 0 then
-           -- ghost in front of wall: adjacent?
-           nextto x y ghostx ghosty
-         else
-           -- location in front of ghost
-           car face == x && cdr face == y;
 
 -- adjacent cells?
 nextto x y xx yy =
@@ -184,12 +174,12 @@ direction world state ghosts nextfields front fright fruit =
 			: (eatghosts choices fright)
 			: (eatdistantghosts world choices fright)
 			: (powerpill choices)
-			: (pillnoghost choices)
-			: (eatdistant world choices)
-			: (noghost world choices)
-			: (noimmediateghost choices)
-			: (pillandghost choices)
-			: (eatenalive choices))
+			: (pillnoghost choices) 	--works
+			: (eatdistant world choices)	--works
+			: (noghost world choices)	--works
+			: (noimmediateghost choices)	--works
+			: (pillandghost choices)	--works
+			: (eatenalive choices))		--works
 	in choose results state;
 
 -- select 4 items from list by index
@@ -245,7 +235,7 @@ distantghost world choice =
 
 distant world choice =
 	let loc = lmLocation (wLambda world)
-	in distancehelper world (move (cdr (cdr choice)) (car loc) (cdr loc)) loc 0;
+	in distancehelper world (move (cdr (cdr choice)) (car loc) (cdr loc)) loc 1;
 -- 0:nichts, 1:essbar, 2:geist geht, 3:geist kommt evtl, 4:wand
 
 distancehelper world pos last length =
@@ -254,7 +244,7 @@ distancehelper world pos last length =
 	in if field == 0
 		then 4:length
 		else let ghost = isGhostInField map (wGhosts world) (car pos) (cdr pos)
-			in if (car ghost)
+			in if (car ghost) == 1
 				then (ghostMoves pos last (cdr ghost)):length
 				else if field == 2 || field == 3 || (field == 4 && (wFruit world)) 
 					then 1:length
@@ -263,13 +253,17 @@ distancehelper world pos last length =
 						else distancehelper world (nextpos world pos last) pos (length + 1);
 
 ghostMoves pos last front =
-	if (move front (car last) (cdr last)) == pos
+	if equalpair (move front (car last) (cdr last)) pos
 		then 2
 		else 3;
 
+equalpair first second =
+	(car first) == (car second) && (cdr first) == (cdr second);
+	
 caneat fright distance =
 	(2 * (fright / 137)) > distance;
 
+--TODO nicht opfern für frucht
 fruitnear choices fruit =
 	if ((item 0 (car choices)) == 4) && fruit
 		then (item 2 (car choices))
@@ -315,7 +309,9 @@ pillnoghost choices =
 eatdistant world choices =
 	if isjunction world (lmLocation (wLambda world))
 		then if (item 1 (car choices)) == 1
-			then 99
+			then if (atom (cdr choices))
+				then 99
+				else eatdistant world (cdr choices)
 			else if (car (distant world (car choices))) == 1
 				then (item 2 (car choices))
 				else if (atom (cdr choices))
@@ -325,8 +321,8 @@ eatdistant world choices =
 
 noghost world choices  =
 	if isjunction world (lmLocation (wLambda world))
-		then let dist = (car (distant world (car choices)))
-			 in if dist == 0 || dist == 2
+		then let dist = (distant world (car choices))
+			 in if (car dist == 0 && (item 1 (car choices)) == 0) || (car dist == 2 && cdr dist > 2)
 				then (item 2 (car choices))
 				else if (atom (cdr choices))
 					then 99
@@ -351,6 +347,5 @@ eatenalive choices =
 	if ((item 0 (car choices)) == 0) == 0
 		then (item 2 (car choices))
 		else eatenalive (cdr choices);
-
 
 
