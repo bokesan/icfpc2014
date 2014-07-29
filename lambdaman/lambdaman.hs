@@ -1,4 +1,98 @@
-main world undefined = init world step;
+-- TODO avoid being eaten while eating when ghosts follow, maybe choose empty fields to gain distance
+-- TODO maybe wait (back and forth) next to power pills till ghosts are near
+-- TODO better tracking of distances (in steps) to do better ghost reach estimation for powers etc
+-- TODO use state for default direction determination
+-- TODO dont merge branches, return both!
+-- TODO check for immediate danger
+
+----- MAIN INFRASTRUCTURE SECTION
+
+-- main function
+main world enemy = init world step;
+
+-- init so far is just setting initial state
+init world step =
+  	let state = 1:0:0 in
+  	(state:step);
+
+-- the step function making direction decisions
+step state world =
+	let options = openfields state world in
+	if canKill options world then
+		goKill state world options
+	else
+		let ghostfreeoptions = noghosts world options in
+		let branches = explore world ghostfreeoptions in	
+		stepAndState state world options branches;
+
+
+-- return state and step direction based on branches
+stepAndState state world options branches =
+	if atom options then
+		getState state : 0	-- ghosts on all sides. no powerpills, no fright. we die.
+	else let killDir = canKillGhost world options branches in
+		-- we can probably kill a ghost
+	if 99 > killDir then
+		getState state : debug killDir 001
+	else let fruitDir = canEatFruit world options branches in
+		-- we can probably eat the fruit, that is: we reach it in time and faster than ghosts
+	if 99 > fruitDir then
+		getState state : debug fruitDir 002
+	else let powerDir = canEatPowerPill world options branches in
+		-- we can probably eat a power pill, that is: faster than ghosts
+	if 99 > powerDir then
+		getState state : debug powerDir 003
+	else let eatSaveDir = canEatSave world options branches in
+		-- save means no ghost and also no ghost towards me on other branches when i choose dead end
+	if 99 > eatSaveDir then
+		getState state : debug eatSaveDir 004
+	else let walkSaveDir = canWalkSave state world options branches in
+		-- save means no ghost also no dead end
+	if 99 > walkSaveDir then
+		getModifiedState state options : debug walkSaveDir 005 -- this is considered lame, no eat, no kill
+	else let eatUnsaveDir = canEatAtLeast world options branches in
+		-- we will probably die, so eat at least some points
+	if 99 > eatUnsaveDir then
+		getState state : debug eatUnsaveDir 006
+	else let dieHarderDir = liveLong world options branches in
+		-- walk the way where the ghost is far away
+		getState state : debug dieHarderDir 007;
+
+----- CONFIGURATION SECTION
+
+-- config: 
+DEPTH = 0;		-- depth - max depth of recursive way checks, 0 is only until next junction
+WRONG_TURNS = 4;	-- number of useless turns before we change default direction
+INCREASE = 200;		-- number of steps after which we increase allowed wrong turns, longer loops are less likely
+DEBUG = 0;		-- 0: no debug but FAILURE, 1: trace choices
+
+debug return value =
+	if DEBUG then dbug return value
+	else return;
+
+----- CONSTANTS SECTION
+
+-- field types
+WALL 		= 0;	-- #
+EMPTY		= 1;	--  
+PILL		= 2;	-- .
+POWER		= 3;	-- o
+FRUIT		= 4;	-- %
+LAMBDA_START	= 5;	-- \
+GHOST_START	= 6;	-- =
+
+-- gives the movement speed for a given field		
+speed field =
+	if field == PILL then			137
+	else if field == POWER then		137
+	else if field == FRUIT then		137	-- we ignore whether the fruit is actually there for now
+	else if field == EMPTY then		127
+	else if field == LAMBDA_START then	127
+	else if field == GHOST_START then	127
+	else if field == WALL then		dbug 127 401	-- FAILURE CANNOT HAPPEN
+	else					dbug 127 402;	-- FAILURE CANNOT HAPPEN
+
+----- ENVIRONMENT AND TYPE ACCESS SECTION
 
 -- world accessor functions
 wMap    world = car world;
@@ -6,361 +100,473 @@ wLambda world = car (cdr world);
 wGhosts world = car (cdr (cdr world));
 wFruit  world = cdr (cdr (cdr world));
 
--- lambdaMan state accessor functions
-lmVitality m  = car m;
-lmLocation m  = car (cdr m);
-lmDirection m = car (cdr (cdr m));
-lmLives m     = car (cdr (cdr (cdr m)));
-lmScore m     = cdr (cdr (cdr (cdr m)));
-
--- type Ghosts = [(GVitality, Location, Direction)]
-gVitality g = car g;
-gLocation g = car (cdr g);
-gDirection g = cdr (cdr g);
-
-
-
--- move into direction from location
-move front x y =
-  if front == 0 then
-    x : y - 1  -- UP
-  else if front == 1 then
-    x + 1 : y -- RIGHT
-  else if front == 2 then
-    x : y + 1 -- DOWN
-  else
-    x - 1 : y; -- LEFT
-
 -- map at location
 mapAt    map x y = item x (item y map);
 mapAtLoc map loc = item (car loc) (item (cdr loc) map);
 
--- is a junction?
+-- lambdaMan state accessor functions
+lmVitality	m = car m;
+lmLocation	m = car (cdr m);
+lmDirection	m = car (cdr (cdr m));
+lmLives		m = car (cdr (cdr (cdr m)));
+lmScore 	m = cdr (cdr (cdr (cdr m)));
+
+-- type Ghosts = [(GVitality, Location, Direction)]
+gVitality	g = car g;
+gLocation	g = car (cdr g);
+gDirection	g = cdr (cdr g);
+
+-- type State = (DefaultDirection, EventlessTurns, TotalSteps)
+stDirection   	state = car state;
+stTurns 	state = car (cdr state);
+stTotalSteps    state = cdr (cdr state);
+
+-- type branch info = (DeadEnd, PillDistance, FruitDistance, PowerDistance, GhostDistance, GhostDirection, Endpoint)
+iDeadEnd	info = (car info);
+iPill		info = (car (cdr info));
+iFruitDistance	info = (car (cdr (cdr info)));
+iPowerDistance	info = (car (cdr (cdr (cdr info))));
+iGhostDistance	info = (car (cdr (cdr (cdr (cdr info)))));
+iGhostDirection info = (car (cdr (cdr (cdr (cdr (cdr info))))));
+iEndpoint	info = (cdr (cdr (cdr (cdr (cdr (cdr info))))));
+
+-- setter for info params
+setDeadEnd bool info = replace 0 bool info;
+setPill value info = replace 1 value info;
+setFruit ticks info = replace 2 ticks info;
+setPower ticks info = replace 3 ticks info;
+setEndpoint posbase info = iDeadEnd info : iPill info : iFruitDistance info : iPowerDistance info : iGhostDistance info : iGhostDirection info : posbase;
+setGhost ticks direction info =  replace 4 ticks (replace 5 direction info);
+
+-- type endpoint = (position, reachedfrom, ticks)
+ePos	endpoint = car endpoint;
+eFrom	endpoint = car (cdr endpoint);
+eTicks	endpoint = cdr (cdr endpoint);
+
+
+----- UTILITY SECTION
+-- TODO sort stuff, functions for ghosts together etc
+
+-- TODO get rid of this wrong thingy, make static access
+-- replaces the element at index in a tuple
+replace index value tuple =
+	if index == 0 then
+		if atom tuple then
+			value
+		else value : cdr tuple
+	else
+		(car tuple) : (replace (index - 1) value (cdr tuple));
+
+-- checks whether a ghost moves towards me
+ghostMovesToMe pos last dir =
+	if samepos (posFromDir dir last) pos
+	then 0		-- Ghost moves away
+	else 1;		-- Ghost may move towards me	
+
+-- get the n item of a list
+item index list =
+	if index == 0 then
+		car list
+	else
+		item (index - 1) (cdr list);
+
+-- number of elements in list
+count list =
+	if atom list then 0
+	else 1 + count (cdr list);
+
+-- get the minimum of two values
+min first second =
+	if first > second then
+		second
+	else
+		first;
+
+-- get the minimum of two values, but ignore zero
+minnotzero first second =
+	if first == 0 then
+		second
+	else if second == 0 then
+		first
+	else
+		min first second;
+
+-- get the maximum of two values
+max first second =
+	if first > second then
+		first
+	else
+		second;
+
+-- get a position from direction and location
+posFromDir dir base =
+	let x = car base;
+	    y = cdr base in
+  	if dir == 0 then
+    		x : y - 1  	-- UP
+  	else if dir == 1 then
+    		x + 1 : y 	-- RIGHT
+  	else if dir == 2 then
+    		x : y + 1 	-- DOWN
+  	else
+    		x - 1 : y; 	-- LEFT
+
+-- get direction to move from chosen option
+getDirection world option =
+	dirFromPos option (lmLocation (wLambda world));
+
+-- get a direction from position and base location
+dirFromPos pos base =
+	let xbase = car base;
+	    ybase = cdr base;
+	    xpos = car pos;
+	    ypos = cdr pos in
+	if xpos > xbase then
+		1		-- RIGHT
+	else if xbase > xpos then
+		3		-- LEFT
+	else if ypos > ybase then
+		2		-- DOWN
+	else
+		0;		-- UP
+
+-- list of current adjacent positions
+posAroundMe world =
+	let loc = lmLocation (wLambda world) in
+	posAround loc;
+
+-- list of adjacent positions
+posAround pos =
+	let x = car pos;
+	    y = cdr pos in
+	[x:(y-1), (x+1):y, x:(y+1), (x-1):y];
+
+-- get the positions for non-wall fields around loc
+openfieldsat world loc =
+	openhelper (wMap world) (posAround loc);
+
+-- get the positions for non-wall fields around me
+openfields state world =
+	openhelper (wMap world) (sortedoptions state world (posAroundMe world));
+
+openhelper map positions =
+	if atom positions then
+		positions
+	else if mapAtLoc map (car positions) == WALL then
+		openhelper map (cdr positions)
+	else
+		(car positions) : openhelper map (cdr positions);
+
+-- sort options according to default direction
+sortedoptions state world options =
+	let defdir = stDirection state;
+	    currdir = lmDirection (wLambda world) in
+	let target = (modulo (defdir + currdir + 3) 4) in
+	if target == 0 then order 0 3 1 2 options
+	else if target == 1 then order 1 0 2 3 options
+	else if target == 2 then order 2 1 3 0 options
+	else order 3 2 0 1 options;
+
+order a b c d list = 
+	item a list : item b list : item c list : item d list : 0;
+
+item index list =
+	if index == 0 then car list
+	else  item (index - 1) (cdr list);
+
+-- is pos surrounded by at least 3 empty fields?
 isjunction world pos =
-	junctionhelper (fieldsat world pos) 0;
+	junctionhelper (wMap world) (posAround pos) 0;
 
-junctionhelper fields empty =
-	if empty > 2
-		then 1
-		else if atom fields
-			then 0
-			else if (car (car fields)) == 0
-				then junctionhelper (cdr fields) empty
-				else junctionhelper (cdr fields) (empty + 1);
+junctionhelper map positions empty =
+	if empty > 2 then
+		1
+	else if atom positions then
+		0
+	else if mapAtLoc map (car positions) == 0 then
+		junctionhelper map (cdr positions) empty
+	else
+		junctionhelper map (cdr positions) (empty + 1);
 
+-- get the  next position following a path from junction to junction
+-- either a pos or 0:0 if there is a dead end
 nextpos world pos last =
-	let near = nearfields world pos last in
-	poshelper (wMap world) near pos;
+	let near = posAround pos in
+	(poshelper (wMap world) (exclude last near));
 
-poshelper map near pos =
-	if atom near
-		then move near (car pos) (cdr pos)
-		else let loc = move (car near) (car pos) (cdr pos)
-			in if (mapAtLoc map loc) == 0
-				then poshelper map (cdr near) pos
-				else loc;
+poshelper map options =
+	if atom options then
+		0:0
+	else if mapAtLoc map (car options) == WALL then
+		poshelper map (cdr options)
+	else
+		car options;
 
--- type State = ( [Int] , (Direction, Int) )
-stGhostspeeds state = car state;
-stLastMoves   state = cdr state;
-stLastMovesDirection state = car (cdr state);
-stLastMovesCount     state = cdr (cdr state);
+-- removes one pos from a list of positions
+exclude remove positions =
+	if atom positions then
+		positions
+	else if samepos remove (car positions) then
+		cdr positions
+	else (car positions) : (exclude remove (cdr positions));
 
-init world step =
-	let ghosts = wGhosts world in
-  	let state = (ghostmoves ghosts) : (0:0)
-  	in (state:step);
+-- checks if two positions are the same
+samepos first second =
+	(car first) == (car second) && (cdr first) == (cdr second);
 
-item index tuple =
-	if index == 0
-		then (getelement tuple)
-		else (item (index - 1) (cdr tuple));
-
-getelement tuple =
-	if (atom tuple)
-		then tuple
-		else (car tuple);
-
-ghostmoves list =
-	ghosthelper 0 0 list;
-
-ghosthelper ghostcount result input =
-	if (atom input)
-		then result
-		else (ghosthelper (ghostcount + 1) ((speed ghostcount) : result) (cdr input));
-
-speed ghostcount = 
-	item (modulo ghostcount 4) speedtuple;
-
-speedtuple = [130, 132, 134, 136];
-slowtuple  = [195, 198, 201, 204];
-
+-- returns the modulo: number % base
 modulo number base =
 	number - (base * (number / base));
-		
-step state world =
-	let new = state
-	in (directionhelp new world);
 
-directionhelp state world =
-	let ghosts = (wGhosts world)
-	in direction world state ghosts (fields world) (lmDirection (wLambda world)) (lmVitality (wLambda world)) (wFruit world);
-
--- list of adjacent locations
-fields world =
-	let x = car (lmLocation (wLambda world));
-	    y = cdr (lmLocation (wLambda world))
-	in fieldsat world (x:y);
-
-fieldsat world pos =
-	let x = car pos;
-	    y = cdr pos;
-	    map = wMap world;
-	    ghosts = wGhosts world
-	in [field ghosts map x (y - 1) 0,
-            field ghosts map (x + 1) y 1,
-            field ghosts map x (y + 1) 2,
-            field ghosts map (x - 1) y 3];
-
-nearfields world pos last =
-	let x = car pos;
-	    y = cdr pos;
-	    prevx = car last;
-	    prevy = cdr last
-	in if x > prevx
-		then 0:1:2
-		else if prevx > x
-			then 2:3:0
-			else if y > prevy
-				then 1:2:3
-				else 3:0:1;
-
-field ghosts map x y dir =
-	mapAt map x y : isGhost map ghosts x y : dir;
-
--- ghost on location OR can step on location ?
-isGhost map ghosts x y =
-  if atom ghosts then
-    0 -- false
-  else
-    let gx = car (gLocation (car ghosts));
-        gy = cdr (gLocation (car ghosts))
-    in
-       (gx == x && gy == y)
-       || nextto x y gx gy
-       || isGhost map (cdr ghosts) x y;
-
--- TODO de-duplicate code
--- boolean:richtung
-isGhostInField map ghosts x y =
-	if atom ghosts then
+-- checks for a ghost, returns bool:direction
+isGhost ghosts pos =
+ 	if atom ghosts then
     		0:0 -- false
   	else
-    		let gx = car (gLocation (car ghosts));
-        	gy = cdr (gLocation (car ghosts));
-        	gd = gDirection (car ghosts)
-    		in if (gx == x && gy == y)
-			then 1:gd
-       		 	else isGhostInField map (cdr ghosts) x y;
+		let ghost = car ghosts in
+    		let x = car pos;
+		    y = cdr pos;
+		    gx = car (gLocation ghost);
+        	    gy = cdr (gLocation ghost);
+		    dir = gDirection ghost in
+		if  (gx == x && gy == y) then
+			1:dir
+		else
+		 	isGhost (cdr ghosts) pos;
 
--- adjacent cells?
-nextto x y xx yy =
-  (x == xx && (yy == y + 1 || yy == y - 1)) ||
-  (y == yy && (xx == x + 1 || xx == x - 1));
+-- checks whether any ghost is coming to me
+anyTowardsMe branches =
+	if atom branches then
+		0
+	else if iGhostDistance (car branches) && 1 == iGhostDirection (car branches) then
+		1
+	else
+		anyTowardsMe (cdr branches);
 
-direction world state ghosts nextfields front fright fruit =
-	let choices = trans nextfields front state in
-	let results = (	  (fruitnear choices fruit)
-			: (eatghosts choices fright)
-			: (eatdistantghosts world choices fright)
-			: (powerpill choices)
-			: (pillnoghost choices) 	--works
-			: (eatdistant world choices)	--works
-			: (noghost world choices)	--works
-			: (noimmediateghost choices)	--works
-			: (pillandghost choices)	--works
-			: (eatenalive choices))		--works
-	in choose results state;
+-- removes options with a ghost on starting point
+noghosts world options =
+	if atom options then
+		options
+	else if car (isGhost (wGhosts world) (car options)) then
+		noghosts world (cdr options)
+	else (car options) : noghosts world (cdr options);
 
--- select 4 items from list by index
-order a b c d xs = [item a xs, item b xs, item c xs, item d xs];
+----- WORLD EXPLORATION SECTION
 
-trans nextfields front state =
-	let first = stLastMovesDirection state
-	in if first == 0
-		then if front == 0
-			then order 3 0 1 2 nextfields
-			else if front == 1
-				then nextfields
-				else if front == 2
-					then order 1 2 3 0 nextfields
-					else order 2 3 0 1 nextfields
-		else if first == 1
-			then if front == 0
-				then order 0 3 1 2 nextfields
-				else if front == 1
-					then order 1 0 2 3 nextfields
-					else if front == 2
-						then order 2 1 3 0 nextfields
-						else order 3 2 0 1 nextfields
-			else if front == 0
-				then order 1 3 0 2 nextfields
-				else if front == 1
-					then order 2 0 1 3 nextfields
-					else if front == 2
-						then order 3 1 2 0 nextfields
-						else order 0 2 3 1 nextfields;
+-- gets a branch info for each moving option
+explore world options =
+	if atom options then
+		options
+	else makebranch DEPTH world (lmLocation (wLambda world)) (car options) : explore world (cdr options);
 
-choose results state =
-	let dir   = stLastMovesDirection state;
-	    count = stLastMovesCount state;
-            res = helpchoose results 0
-	in if count > 6
-		then ((car state):((modulo (dir + 1) 3):0)):(car res)
-		else if (cdr res) > 5
-			then ((car state):(dir:(count + 1))):(car res)
-			else ((car state):(dir:count)):(car res);
+-- gives info for the way along pos away from base and checks further if necessary
+makebranch iterate world base pos =
+	let inf = branchfinder world base pos in
+	if iterate && nothingspecial inf then
+		mergeinfos (iterate - 1) world (iEndpoint inf)
+	else
+		inf;
 
-helpchoose results deep =
-	if (item 0 results) == 99
-		then helpchoose (cdr results) (deep + 1)
-		else (item 0 results):deep;
+-- checks if there is anything worth noting in that info, returns true if all relevant fields are 0
+nothingspecial info =
+	0 ==	(iDeadEnd info)		+
+		(iPill info) 		+
+		(iFruitDistance info)	+
+		(iPowerDistance info)	+
+		(iGhostDistance info);
 
--- return bool:distance
--- TODO auch weglaufende geister essen
-distantghost world choice =
-	let result = distant world choice 0
-	in if (car result) == 3
-		then 1:(cdr result)
-		else 0:0;
+-- gives infos from branches starting at endpoint as one merged info
+mergeinfos iterate world endpoint =
+	let options = exclude (eFrom endpoint) (openfieldsat world (ePos endpoint)) in
+	addoffset (eTicks endpoint) (mergehelper iterate world options (ePos endpoint));
 
-distant world choice iterate =
-	let loc = lmLocation (wLambda world)
-	in distancehelper iterate world (move (cdr (cdr choice)) (car loc) (cdr loc)) loc 1;
--- 0:nichts, 1:essbar, 2:geist geht, 3:geist kommt evtl, 4:wand
+mergehelper iterate world options base =
+	if atom options then
+		1:0:0:0:0:0:((0:0):(0:0):0)
+	else merge (makebranch iterate world base (car options)) (mergehelper iterate world (cdr options) base);
 
---iterate erstmal nur für essbares
-distancehelper iterate world pos last length =
-	let map = wMap world in
-	let field = mapAtLoc map pos
-	in if field == 0
-		then 4:length
-		else let ghost = isGhostInField map (wGhosts world) (car pos) (cdr pos)
-			in if (car ghost) == 1
-				then (ghostMoves pos last (cdr ghost)):length
-				else if field == 2 || field == 3 || (field == 4 && (wFruit world)) 
-					then 1:length
-					else if isjunction world pos
-						then if iterate
-							then distantfood world pos last
-							else 0:length
-						else distancehelper iterate world (nextpos world pos last) pos (length + 1);
+addoffset ticks info =
+	iDeadEnd info :
+	addnonzero ticks (iPill info) :
+	addnonzero ticks (iFruitDistance info) :
+	addnonzero ticks (iPowerDistance info) :
+	addnonzero ticks (iGhostDistance info) :
+	iGhostDirection info :
+	iEndpoint info;
 
-distantfood world pos last =
-	let near = nearfields world pos last in
-	let next1 = move (car near) (car pos) (cdr pos);
-	    next2 = move (car (cdr near)) (car pos) (cdr pos);
-	    next3 = move (cdr (cdr near)) (car pos) (cdr pos)
-	in if 1 == car (distancehelper 0 world next1 pos 0)
-	|| 1 == car (distancehelper 0 world next2 pos 0)
-	|| 1 == car (distancehelper 0 world next3 pos 0)
-		then 1:0
-		else 0:0;
+addnonzero ticks value =
+	if value == 0 then 0
+	else ticks + value;
 
-ghostMoves pos last front =
-	if equalpair (move front (car last) (cdr last)) pos
-		then 2
-		else 3;
+-- combines two infos into one
+merge first second =
+	( min (iDeadEnd first) (iDeadEnd second)
+	: max (iPill first) (iPill second)
+	: minnotzero (iFruitDistance first) (iFruitDistance second)
+	: minnotzero (iPowerDistance first) (iPowerDistance second)
+	: minnotzero (iGhostDistance first) (iGhostDistance second)
+	: handle (iGhostDirection first) (iGhostDirection second)	-- TODO handle ghosts in iterations well
+	: ((0:0):(0:0):0) );
 
-equalpair first second =
-	(car first) == (car second) && (cdr first) == (cdr second);
-	
-caneat fright distance =
-	(2 * (fright / 137)) > distance;
+-- TODO remove
+handle eins zwei =
+	if eins == 1 && zwei == 1 then 1
+	else if eins == 0 && zwei == 0 then 0
+	else 2;
 
---TODO nicht opfern für frucht
-fruitnear choices fruit =
-	if ((item 0 (car choices)) == 4) && fruit
-		then (item 2 (car choices))
-		else if (atom (cdr choices))
-			then 99
-			else fruitnear (cdr choices) fruit;
+-- get the info for a specific branch
+branchfinder world base pos =
+	branchhelper world base pos 1 (0:0:0:0:0:0:((0:0):(0:0):0));
 
-eatghosts choices fright =
-	if fright == 0
-		then 99
-		else if (item 1 (car choices)) == 1
-			then (item 2 (car choices))
-			else if (atom (cdr choices))
-				then 99
-				else eatghosts (cdr choices) fright;
+branchhelper world base pos ticks info =
+	let field = (mapAtLoc (wMap world) pos) in
+	let newinfo = (setInfo field ticks info) in
+	if samepos pos (0:0) then		-- dead end has been set by setInfo, its over here
+		newinfo				
+	else if (isjunction world pos) then	-- end point has to be set, we dont go on
+		setEndpoint (pos:base:ticks) newinfo
+	else let ghost = isGhost (wGhosts world) pos in
+		if car ghost then		-- ghost, wheee! look no further
+			setGhost ticks (ghostMovesToMe pos base (cdr ghost)) newinfo
+		else
+			branchhelper world pos (nextpos world pos base) (ticks + (speed field)) newinfo;
 
-eatdistantghosts world choices fright =
-	if fright == 0
-		then 99
-		else if isjunction world (lmLocation (wLambda world))
- 			then let ghost = distantghost world (car choices)
-				in if (car ghost) && (caneat fright (cdr ghost))
-					then (item 2 (car choices))
-					else if (atom (cdr choices))
-						then 99
-						else eatdistantghosts world (cdr choices) fright
-			else 99;
+-- modifies the given info object based on field content
+setInfo field ticks info =
+	if field == PILL then
+		setPill (minnotzero ticks (iPill info)) info
+	else if field == POWER then
+		setPower (minnotzero ticks (iPowerDistance info)) info
+	else if field == FRUIT then		-- dont check for fruit status, will be done later
+		setFruit (minnotzero ticks (iFruitDistance info)) info
+	else if field == WALL then
+		setDeadEnd 1 info
+	else if field == EMPTY || field == LAMBDA_START || field == GHOST_START then
+		info				-- nothing to do
+	else
+		dbug info 403;			-- FAILURE CANNOT HAPPEN
 
-powerpill choices =
-	if (item 0 (car choices)) == 3
-		then (item 2 (car choices))
-		else if (atom (cdr choices))
-			then 99
-			else powerpill (cdr choices);
+----- QUICK GHOST KILL SECTION
 
-pillnoghost choices =
-	if ((item 0 (car choices)) == 2) && ((item 1 (car choices)) == 0)
-		then (item 2 (car choices))
-		else if (atom (cdr choices))
-			then 99
-			else pillnoghost (cdr choices);
+-- can we immediately kill a ghost?
+canKill options world =
+	if atom options then 0		-- false
+	else if car (isGhost (wGhosts world) (car options)) then
+		if lmVitality (wLambda world) > 1 || mapAtLoc (wMap world) (car options) == POWER then
+			1		-- true
+		else canKill (cdr options) world
+	else canKill (cdr options) world;
 
-eatdistant world choices =
-	if isjunction world (lmLocation (wLambda world))
-		then if (item 1 (car choices)) == 1
-			then if (atom (cdr choices))
-				then 99
-				else eatdistant world (cdr choices)
-			else if (car (distant world (car choices) 1)) == 1
-				then (item 2 (car choices))
-				else if (atom (cdr choices))
-					then 99
-					else eatdistant world (cdr choices)
-		else 99;
+-- get the kill direction TODO: de-duplicate code
+killDirection options world =
+	if atom options then dbug 0 417	-- FAILURE CANNOT HAPPEN
+	else if car (isGhost (wGhosts world) (car options)) then
+		if lmVitality (wLambda world) > 1 || mapAtLoc (wMap world) (car options) == POWER then
+			dirFromPos (car options) (lmLocation (wLambda world))
+		else killDirection (cdr options) world
+	else killDirection (cdr options) world;
 
-noghost world choices  =
-	if isjunction world (lmLocation (wLambda world))
-		then let dist = (distant world (car choices) 0)
-			 in if (car dist == 0 && (item 1 (car choices)) == 0) || (car dist == 2 && cdr dist > 2)
-				then (item 2 (car choices))
-				else if (atom (cdr choices))
-					then 99
-					else noghost world (cdr choices)
-		else 99;
+-- kill a ghost, return state and direction
+goKill state options world =
+	let state = ((stDirection state) : 0 : (1 + (stTotalSteps state)));
+	    direction = killDirection options world in
+	state:direction;
 
-noimmediateghost choices =	
-	if (((item 1 (car choices)) == 0) && (((item 0 (car choices)) == 0) == 0))
-		then (item 2 (car choices))
-		else if (atom (cdr choices))
-			then 99
-			else noimmediateghost (cdr choices);
+----- STATE MANAGEMENT SECTION
 
-pillandghost choices =
-	if (item 0 (car choices)) == 2
-		then (item 2 (car choices))
-		else if (atom (cdr choices))
-			then 99
-			else pillandghost (cdr choices);
+-- get the state for next step
+getState state =
+	((stDirection state) : 0 : (1 + (stTotalSteps state)));
 
-eatenalive choices =
-	if ((item 0 (car choices)) == 0) == 0
-		then (item 2 (car choices))
-		else eatenalive (cdr choices);
+-- gets the state with possibly modified standard direction
+getModifiedState state options = 
+	if (count options) > 2 then
+		if stTurns state > ( WRONG_TURNS + (stTotalSteps state) / INCREASE ) then
+			(modulo (1 + stDirection state) 4) : 0 : (1 + (stTotalSteps state))
+		else
+			((stDirection state) : (1 + stTurns state) : (1 + stTotalSteps state))
+	else 
+		((stDirection state) : 0 : (1 + stTotalSteps state));
 
+----- HEURISTICS FOR MOVING SECTION
+
+-- we can probably kill a ghost
+canKillGhost world options branches =
+	if atom branches then 99
+	else let branch = car branches;
+		 fright = lmVitality (wLambda world) in
+	if iGhostDistance branch && 		
+			-- ghost going away probably slow enough	
+			(iGhostDirection branch == 0 && 7 * fright > 26 * iGhostDistance branch) ||
+			-- ghost coming probably fast enough	
+			(iGhostDirection branch == 1 && 20 * fright / (iGhostDistance branch - fright) > 29) then
+		getDirection world (car options)
+	else canKillGhost world (cdr options) (cdr branches);
+
+-- we can probably eat the fruit, that is we reach it in time and faster than ghosts
+canEatFruit world options branches =
+	if atom branches then 99
+	else let branch = car branches in
+	if wFruit world > iFruitDistance branch &&
+			-- no ghost
+			(iGhostDistance branch == 0 ||	
+			-- ghost going away probably fast enough	
+			(iGhostDirection branch == 0 && 14 * iGhostDistance branch > iFruitDistance branch) ||
+			-- ghost coming and probably slow enough	
+			(iGhostDirection branch == 1 && 25 * iGhostDistance branch > 53 * iFruitDistance branch)) then
+		getDirection world (car options)
+	else canEatFruit world (cdr options) (cdr branches);
+
+-- we can probably eat a power pill, that is faster than ghosts		
+canEatPowerPill world options branches =
+	if atom branches then 99
+	else let branch = car branches in
+	if iPowerDistance branch &&
+			-- no ghost
+			(iGhostDistance branch == 0 ||	
+			-- ghost going away probably fast enough	
+			(iGhostDirection branch == 0 && 10 * iGhostDistance branch > iPowerDistance branch) ||
+			-- ghost coming and probably slow enough	
+			(iGhostDirection branch == 1 && 5 * iGhostDistance branch > 11 * iPowerDistance branch)) then
+		getDirection world (car options)
+	else canEatPowerPill world (cdr options) (cdr branches);		
+		
+-- save means no ghost and also no ghost towards me on other branches when i choose dead end; take near food first
+canEatSave world options branches =
+	caneathelper world options branches 99 99999;
+
+caneathelper world options branches dir near =
+	if atom branches then dir
+	else let incoming = anyTowardsMe branches;
+		 branch = car branches in
+	if iPill branch && near > iPill branch &&
+		(iDeadEnd branch == 0 || incoming == 0) &&
+		(iGhostDistance branch == 0 || iGhostDirection branch == 0) then
+			caneathelper world (cdr options) (cdr branches) (getDirection world (car options)) (iPill branch)
+	else caneathelper world (cdr options) (cdr branches) dir near;
+		
+-- save means no ghost also no dead end
+canWalkSave state world options branches =
+	if atom branches then 99
+	else if 0 == iDeadEnd (car branches) && (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches)) then
+		getDirection world (car options)
+	else canWalkSave state world (cdr options) (cdr branches);
+		
+-- we will probably die, so eat at least some points
+canEatAtLeast world options branches =
+	if atom branches then 99
+	else if iPill (car branches) then
+		getDirection world (car options)
+	else canEatAtLeast world (cdr options) (cdr branches);
+		
+-- walk the way where the ghost is far away
+liveLong world options branches =
+	getDirection world (longHelper world options branches (car options) 0);
+
+longHelper world options branches bestoption distance =
+	if atom branches then bestoption
+	else if iGhostDistance (car branches) > distance then
+		longHelper world (cdr options) (cdr branches) (car options) (iGhostDistance (car branches))
+	else
+		 longHelper world (cdr options) (cdr branches) bestoption distance;
 
