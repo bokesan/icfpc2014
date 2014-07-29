@@ -11,17 +11,13 @@ import Gcc (link)
 
 import System.Console.GetOpt
 
-data Flag = Optimize
-	  | Optimize2
-	  | ParseOnly
+data Flag = ParseOnly
 	  | Usage
 	  deriving (Eq, Show)
 
 options  :: [OptDescr Flag]
 options  =
-   [ Option ['O'] ["optimize"] (NoArg Optimize) "make it run faster",
-     Option ['X'] ["optimize2"] (NoArg Optimize2) "make it run much faster",
-     Option ['p'] ["parse-only"] (NoArg ParseOnly) "don't write any output files",
+   [ Option ['p'] ["parse-only"] (NoArg ParseOnly) "don't write any output files",
      Option ['h','?'] ["help"] (NoArg Usage) "this text" ]
 
 
@@ -49,7 +45,7 @@ fcMain opts (f:fs)	=  compile opts f >> fcMain opts fs
 compile :: [Flag] -> String -> IO ()
 compile opts f =
    do
-      text <- readFile (sourceName f)
+      text <- readFile f
       let ds = parseTL text
           ds' | ParseOnly `elem` opts = []
               | otherwise = compileDefns ds
@@ -58,39 +54,3 @@ compile opts f =
            mapM_ (\d -> putStrLn (show d)) ds
          else
            mapM_ (\d -> putStrLn (show d)) (link ds')
-
---         putStr (unlines (map (flip displayDefn "\n") ds'))
---       print (lex text)
-
-
-sourceName		:: String -> String
-sourceName f		=  if fileHasExtension f then f else (f ++ ".gcc")
-
-fileHasExtension	:: String -> Bool
-fileHasExtension f	=  case fileParse f of
-			      (_,_,"") -> False
-			      _ -> True
-
--- Parse file into path, basename, and extension.
-fileParse :: String -> (String, String, String)
-fileParse f = ge "" "" (reverse f)
-   where
-      ge e  r ""	=  ("", r, e)
-      ge "" r ('.':s)   =  ge r "" s
-      ge e  r ('.':s)   =  ge e ('.':r) s
-      ge e  r (c:s)	=  if isPathSep c then
-			      (reverse (if retainPathSep c then c:s else s),
-			       r, e)
-			   else
-			       ge e (c:r) s
-
-isPathSep		:: Char -> Bool
-isPathSep '/'		=  True
-isPathSep '\\'		=  True
-isPathSep ':'		=  True
-isPathSep _		=  False
-
-retainPathSep		:: Char -> Bool
-retainPathSep ':'	=  True
-retainPathSep _		=  False
-
