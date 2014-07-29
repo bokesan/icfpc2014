@@ -1,103 +1,240 @@
-main {
-  call lowerGhostOnLoc;
-  if a /= 0 then halt fi;
-  sys index;
-  sys status;
-  add b 2;
-  and b 3;
-  [0] := b;  # [0] = opposite of current direction
-  g := 0;
-  if a /= 0 then
-    g := 2
-  fi;
-  call kill;
-  halt
-}
+; file evil.gasm
+; This program is dedicated to Xykon.
 
-lowerGhostOnLoc {
-    sys index;
-    c := a;
-    sys curpos;
-    d := a;
-    e := b;
-    f := 0;
-    if c /= 0 then
-      do
-        dec c;
-        a := c;
-        sys curpos;
-        f := 1; # true
-        if a /= d then f := 0 fi;
-        if b /= e then f := 0 fi;
-        if f /= 0 then c := 0 fi
-      while c > 0
-    fi;
-    a := f
-}
-
-flipdir {
-        # g should be 0 to keep dir, or 2 to flip:
-        # 0 -> 2
-        # 1 -> 3
-        # 2 -> 0
-        # 3 -> 1
-        add a g;
-        and a 3
-}
-
-movelarger {
-       e := c;
-       if d /= [0] then
-         e := d
-       fi;
-       if a >= b then
-             if a /= b then
-                 e := c
-             # fi;
-             # sys index;
-             # and a 1;
-             # if a /= 0 then
-             #     e := c
-             fi
-       fi;
-       a := e; call flipdir; sys move;
-       halt
-}
+def reverse [90]   ; 2 if fleeing, else 0
+def revDir  [91]
+def frightDistance 15 ; only flee if distance <= this
 
 
-kill {
-        sys index;
-        sys curpos;
-        c := a;
-        d := b;
-        sys lambda1;
-        e := a;
-        f := b;
-        if e <= c then
-                # lambda to the left
-                sub c e;  # c = delta X
-                if f <= d then
-                        # upper left
-                        sub d f;   # d = delta Y
-                        a := d; b := c; c := 0; d := 3;
-                        call movelarger
-                fi;
-                # lower left
-                sub f d; # f = delta Y
-                a := f; b := c; c := 2; d := 3;
-                call movelarger
-        fi;
-        # lambda is to the right
-        sub e c;   # e = delta X
-        if f <= d then
-                # upper right
-                sub d f; # d = delta y
-                a := d; b := e; c := 0; d := 1;
-                call movelarger
-        fi;
-        # lower right
-        sub f d; # f = delta Y
-        a := f; b := e; c := 2; d := 1;
-        call movelarger
-}
+; absolute value of a. clobbers b
+macro abs val, tmp
+    if val >= 128
+        mov tmp,val
+        mov val,0
+        sub val,tmp
+    fi
+endm
 
+; put distance in steps between (a,b) and (c,d) into a
+; clobbers e
+macro distance
+    sub a,c  ; delta x
+    abs a, e
+    sub c,d
+    abs c, e
+    add a,c
+endm
+
+; distance from me to lambda
+macro distToLambda
+    sys index
+    sys curpos
+    mov c,a
+    mov d,b
+    sys lambda1
+    distance
+endm
+
+macro flipdir
+    ; reverse should be 0 to keep dir, or 2 to flip:
+    ; 0 -> 2
+    ; 1 -> 3
+    ; 2 -> 0
+    ; 3 -> 1
+    add a,reverse
+    and a,3
+endm
+
+; a modulo b, clobbering c
+macro mod a,b, c
+    mov c, a
+    div c, b
+    mul c, b
+    sub a, c
+endm
+
+; move x,y into direction.
+; dir must not be indirect
+; requires direction offsets at memory location 0-7 to be initialized
+macro moveDir x,y,dir
+    mul dir,2
+    add a,[dir]
+    inc dir
+    add b,[dir]
+    div dir,2 ; restore original value
+endm
+
+; move x,y to the right of dir
+macro right x,y,dir
+    inc dir
+    and dir,3
+    moveDir x,y,dir
+    dec dir
+    and dir,3
+endm
+
+; move x,y to the left of dir
+macro left x,y,dir
+    dec dir
+    and dir,3
+    moveDir x,y,dir
+    inc dir
+    and dir,3
+endm
+
+; are we looking into a dead end?
+; leaves e == 0 if not a dead end,
+;    and e /= 0 if a dead end
+; takes location in (a,b) and direction in c
+; clobbers all registers
+macro isDeadEnd
+    mov e,0
+    do while e == 0
+        moveDir a,b,c  ; advance one step
+        mov d,a        ; save x
+        sys map
+        mov e,255 ; stop tag
+        if a /= 0
+            ; not a wall, test left and right
+            mov e,0
+            mov a,d  ; restore x
+            right a,b,c
+            mov d,a  ; save x
+            sys map
+            mov e,a  ; right cell contents
+            mov a,d
+            left a,b,c
+            left a,b,c
+            mov d,a  ; save x
+            sys map
+            add e,a  ; add left cell contents
+            ; if e > 0, we are not in a dead end
+            mov a,d
+            right a,b,c ; back to original pos
+        fi
+    od
+    ; now, if e = 255, we have a dead end
+    if e <= 254
+        mov e,0
+    fi
+endm
+
+
+def myX [92]
+def myY [93]
+
+; is a ghost with a lower index at the same position?
+macro lowerGhostOnLoc
+    sys index
+    if a /= 0
+        if a >= 6 ; dont waste too many cycles here
+            mov a,5
+        fi
+        mov c,a
+        sys curpos
+        mov myX,a
+        mov myY,b
+        mov f,0
+        do
+            dec c     ; next lower ghost
+            mov a, c
+            sys curpos
+            mov f, 1    ; true
+            if a /= myX : mov f,0 : fi
+            if b /= myY : mov f,0 : fi
+            if f /= 0 : mov c,0 : fi
+        while c > 0
+    fi
+    mov a,f
+endm
+
+macro movelarger
+    mov e, c
+    if d /= revDir
+        mov e,d
+    fi
+    if a >= b
+        if a /= b
+            mov e, c
+             ; fi;
+             ; sys index;
+             ; and a 1;
+             ; if a /= 0 then
+             ;     e := c
+        fi
+    fi
+    mov a, e : flipdir : sys move
+    hlt
+endm
+
+
+macro kill
+    sys index
+    sys curpos
+    mov c, a
+    mov d, b
+    sys lambda1
+    mov e, a
+    mov f, b
+    if e <= c
+        ; lambda to the left
+        sub c, e    ; c = delta X
+        if f <= d
+            ; upper left
+            sub d,f    ; d = delta Y
+            mov a,d: mov b,c: mov c,0: mov d,3
+            movelarger
+        fi
+        ; lower left
+        sub f,d    ; f = delta Y
+        mov a,f: mov b,c: mov c,2: mov d,3
+        movelarger
+    fi
+    ; lambda is to the right
+    sub e,c     ; e = delta X
+    if f <= d
+        ; upper right
+        sub d,f     ; d = delta y
+        mov a,d: mov b,e: mov c,0: mov d,1
+        movelarger
+    fi
+    ; lower right
+    sub f,d       ; f = delta Y
+    mov a,f: mov b,e; mov c,2; mov d,1
+    movelarger
+endm
+
+macro init
+    ; initialize direction offsets
+    ;mov [0], 0
+    mov [1], 255
+    mov [2], 1
+    ;mov [3], 0
+    ;mov [4], 0
+    mov [5], 1
+    mov [6], 255
+    ;mov [7], 0
+endm
+
+; main entry point
+    init
+    lowerGhostOnLoc
+    if a /= 0 : hlt : fi
+    sys index
+    sys status
+    add b,2
+    and b,3
+    mov revDir, b    ; opposite of current direction
+    mov reverse, 0
+    if a /= 0
+        ; I'm frightened or invisible. Maybe I should flee
+        ; But only if I'm near the lambda-man
+        distToLambda
+        if a <= frightDistance
+            mov reverse, 2
+        fi
+    fi
+    kill
+    hlt
+
+; Xykon: "I think I just had an evilgasm". OOTS #197: A Change of Scale
