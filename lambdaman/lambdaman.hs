@@ -1,7 +1,6 @@
 -- TODO avoid being eaten while eating when ghosts follow, maybe choose empty fields to gain distance
 -- TODO maybe wait (back and forth) next to power pills till ghosts are near
 -- TODO better tracking of distances (in steps) to do better ghost reach estimation for powers etc
--- TODO dont merge branches, return both!
 
 ----- MAIN INFRASTRUCTURE SECTION
 
@@ -32,6 +31,12 @@ stepAndState state world options branches =
 		-- we can probably kill a ghost
 	if 99 > killDir then
 		getState state : debug killDir 001
+
+	else let powerpill = powerpill world options in
+	if 99 > powerpill then getState state : powerpill
+	else let pillnoghost = pillnoghost world options in
+	if 99 > pillnoghost then getState state : pillnoghost
+
 	else let fruitDir = canEatFruit world options branches in
 		-- we can probably eat the fruit, that is: we reach it in time and faster than ghosts
 	if 99 > fruitDir then
@@ -58,11 +63,14 @@ stepAndState state world options branches =
 		getState state : debug dieHarderDir 007
 	else dbug (getState state : 0) 408;	-- FAILURE CANNOT HAPPEN
 
+
+
+
 ----- CONFIGURATION SECTION
 
 -- config: 
-DEPTH = 1;		-- depth - max depth of recursive way checks, 0 is only until next junction
-WRONG_TURNS = 2;	-- number of useless turns before we change default direction
+DEPTH = 3;		-- depth - max depth of recursive way checks, 0 is only until next junction
+WRONG_TURNS = 17;	-- number of useless turns before we change default direction
 INCREASE = 200;		-- number of steps after which we increase allowed wrong turns, longer loops are less likely
 DEBUG = 0;		-- 0: no debug but FAILURE, 1: trace choices
 
@@ -363,13 +371,15 @@ anyTowardsMe branches =
 noghosts world options =
 	if atom options then
 		options
+	else if lmVitality (wLambda world) > 0 then
+		options
 	else if isDangerous world (car options) then
 		noghosts world (cdr options)
 	else (car options) : noghosts world (cdr options);
 
 ----- WORLD EXPLORATION SECTION
 
--- gets a branch info for each moving option
+-- gets one or more branch info for each moving option
 explore world options =
 	if atom options then
 		options
@@ -379,9 +389,9 @@ explore world options =
 makebranch iterate world base pos =
 	let inf = branchfinder world base pos in
 	if iterate && nothingspecial inf then
-		mergeinfos (iterate - 1) world (iEndpoint inf)
+		moreinfos (iterate - 1) world (iEndpoint inf)
 	else
-		inf;
+		(inf:0);
 
 -- checks if there is anything worth noting in that info, returns true if all relevant fields are 0
 nothingspecial info =
@@ -391,44 +401,32 @@ nothingspecial info =
 		(iPowerDistance info)	+
 		(iGhostDistance info);
 
--- gives infos from branches starting at endpoint as one merged info
-mergeinfos iterate world endpoint =
-	let options = exclude (eFrom endpoint) (openfieldsat world (ePos endpoint)) in
-	addoffset (eTicks endpoint) (mergehelper iterate world options (ePos endpoint));
+-- gives infos from branches starting at endpoint as more info
+moreinfos iterate world endpoint =
+	let options = exclude (eFrom endpoint) (openfieldsat world (ePos endpoint))  in
+	addoffset (eTicks endpoint) (cdr (morehelper iterate world options (ePos endpoint)));
 
-mergehelper iterate world options base =
+morehelper iterate world options base =
 	if atom options then
-		1:0:0:0:0:0:((0:0):(0:0):0)
-	else merge (makebranch iterate world base (car options)) (mergehelper iterate world (cdr options) base);
+		0
+	else (morehelper iterate world (cdr options) base) : (makebranch iterate world base (car options));
 
-addoffset ticks info =
+addoffset ticks infos =
+	if atom infos then infos
+	else let info = car infos in
+	(
 	iDeadEnd info :
 	addnonzero ticks (iPill info) :
 	addnonzero ticks (iFruitDistance info) :
 	addnonzero ticks (iPowerDistance info) :
 	addnonzero ticks (iGhostDistance info) :
 	iGhostDirection info :
-	iEndpoint info;
+	iEndpoint info)
+	: addoffset ticks (cdr infos);
 
 addnonzero ticks value =
 	if value == 0 then 0
 	else ticks + value;
-
--- combines two infos into one
-merge first second =
-	( min (iDeadEnd first) (iDeadEnd second)
-	: max (iPill first) (iPill second)
-	: minnotzero (iFruitDistance first) (iFruitDistance second)
-	: minnotzero (iPowerDistance first) (iPowerDistance second)
-	: minnotzero (iGhostDistance first) (iGhostDistance second)
-	: handle (iGhostDirection first) (iGhostDirection second)	-- TODO handle ghosts in iterations well
-	: ((0:0):(0:0):0) );
-
--- TODO remove
-handle eins zwei =
-	if eins == 1 && zwei == 1 then 1
-	else if eins == 0 && zwei == 0 then 0
-	else 2;
 
 -- get the info for a specific branch
 branchfinder world base pos =
@@ -509,20 +507,34 @@ getModifiedState state options =
 -- we can probably kill a ghost
 canKillGhost world options branches =
 	if atom branches then 99
-	else let branch = car branches;
+	else let branchset = car branches;
 		 fright = lmVitality (wLambda world) in
-	if iGhostDistance branch && 		
-			-- ghost going away probably slow enough	
-			(iGhostDirection branch == 0 && 7 * fright > 26 * iGhostDistance branch) ||
-			-- ghost coming probably fast enough	
-			(iGhostDirection branch == 1 && 20 * fright / (iGhostDistance branch - fright) > 29) then
+	if anykill fright branchset then
 		getDirection world (car options)
 	else canKillGhost world (cdr options) (cdr branches);
+
+anykill fright set =
+	if atom set then 0
+	else let branch = car set in
+	if (iGhostDistance branch && fright > 50) then		
+			-- ghost going away probably slow enough	
+			--((iGhostDirection branch == 0 && 7 * fright > 26 * iGhostDistance branch) ||
+			-- ghost coming probably fast enough	
+			--(iGhostDirection branch == 1 && 20 * fright / (iGhostDistance branch - fright) > 29)) then
+		1
+	else anykill fright (cdr set);
 
 -- we can probably eat the fruit, that is we reach it in time and faster than ghosts
 canEatFruit world options branches =
 	if atom branches then 99
-	else let branch = car branches in
+	else let branchset = car branches in
+	if anyfruit world branchset then
+		getDirection world (car options)
+	else canEatFruit world (cdr options) (cdr branches);
+
+anyfruit world set =
+	if atom set then 0
+	else let branch = car set in
 	if wFruit world > iFruitDistance branch &&
 			-- no ghost
 			(iGhostDistance branch == 0 ||	
@@ -530,13 +542,20 @@ canEatFruit world options branches =
 			(iGhostDirection branch == 0 && 14 * iGhostDistance branch > iFruitDistance branch) ||
 			-- ghost coming and probably slow enough	
 			(iGhostDirection branch == 1 && 25 * iGhostDistance branch > 53 * iFruitDistance branch)) then
-		getDirection world (car options)
-	else canEatFruit world (cdr options) (cdr branches);
+		1
+	else anyfruit world (cdr set);
 
 -- we can probably eat a power pill, that is faster than ghosts		
 canEatPowerPill world options branches =
 	if atom branches then 99
-	else let branch = car branches in
+	else let branchset = car branches in
+	if anypower branchset then
+		getDirection world (car options)
+	else canEatPowerPill world (cdr options) (cdr branches);
+
+anypower set =
+	if atom set then 0
+	else let branch = car set in
 	if iPowerDistance branch &&
 			-- no ghost
 			(iGhostDistance branch == 0 ||	
@@ -544,8 +563,8 @@ canEatPowerPill world options branches =
 			(iGhostDirection branch == 0 && 10 * iGhostDistance branch > iPowerDistance branch) ||
 			-- ghost coming and probably slow enough	
 			(iGhostDirection branch == 1 && 5 * iGhostDistance branch > 11 * iPowerDistance branch)) then
-		getDirection world (car options)
-	else canEatPowerPill world (cdr options) (cdr branches);		
+		1
+	else anypower (cdr set);		
 		
 -- save means no ghost and also no ghost towards me on other branches when i choose dead end; take near food first
 canEatSave world options branches =
@@ -553,28 +572,52 @@ canEatSave world options branches =
 
 caneathelper world options branches dir near =
 	if atom branches then dir
-	else let incoming = anyTowardsMe branches;
-		 branch = car branches in
+	else let branchset = car branches in
+	let result = anyeat near branchset in
+	if result then
+			caneathelper world (cdr options) (cdr branches) (getDirection world (car options)) result
+	else caneathelper world (cdr options) (cdr branches) dir near;
+
+anyeat near set =
+	if atom set then 0
+	else let branch = car set in
+	let incoming = anyTowardsMe set in
 	if iPill branch && near > iPill branch &&
 		(iDeadEnd branch == 0 || incoming == 0) &&
 		(iGhostDistance branch == 0 || iGhostDirection branch == 0) then
-			caneathelper world (cdr options) (cdr branches) (getDirection world (car options)) (iPill branch)
-	else caneathelper world (cdr options) (cdr branches) dir near;
+		iPill branch
+	else anyeat near (cdr set);
+
 		
 -- save means no ghost also no dead end
 canWalkSave world options branches =
 	if atom branches then 99
-	else if 0 == iDeadEnd (car branches)
-		&& (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches)) then
+	else let branchset = car branches in
+	if anysave branchset then
 			getDirection world (car options)
 	else canWalkSave world (cdr options) (cdr branches);
+
+anysave branchset =
+	if atom branchset then 0
+	else let branch = car branchset in
+	if 0 == iDeadEnd branch
+		&& (0 == iGhostDistance branch || 0 == iGhostDirection branch) then
+		1
+	else anysave (cdr branchset);
 		
 -- we will probably die, so eat at least some points
 canEatAtLeast world options branches =
 	if atom branches then 99
-	else if iPill (car branches) then
+	else let branchset = car branches in 
+	if anyatleast branchset then
 		getDirection world (car options)
 	else canEatAtLeast world (cdr options) (cdr branches);
+
+anyatleast set =
+	if atom set then 0
+	else let branch = car set in
+	if iPill branch then 1
+	else anyatleast (cdr set);
 		
 -- walk the way where the ghost is far away
 liveLong world options branches =
@@ -582,8 +625,32 @@ liveLong world options branches =
 
 longHelper world options branches bestoption distance =
 	if atom branches then bestoption
-	else if iGhostDistance (car branches) > distance then
-		longHelper world (cdr options) (cdr branches) (car options) (iGhostDistance (car branches))
+	else let branchset = car branches in
+	let result = anylong distance branchset in
+	if result then
+		longHelper world (cdr options) (cdr branches) (car options) result
 	else
 		 longHelper world (cdr options) (cdr branches) bestoption distance;
+
+anylong distance set =
+	if atom set then 0
+	else let branch = car set in
+	if iGhostDistance branch > distance then iGhostDistance branch
+	else anylong distance (cdr set);
+
+-- old code from 2.1
+powerpill world choices =
+	if mapAtLoc (wMap world) (car choices) == POWER
+		then getDirection world (car choices)
+		else if (atom (cdr choices))
+			then 99
+			else powerpill world (cdr choices);
+
+-- old code from 2.1
+pillnoghost world choices =
+	if mapAtLoc (wMap world) (car choices) == PILL && car (isGhost (wGhosts world) (car choices)) == 0
+		then getDirection world (car choices)
+		else if (atom (cdr choices))
+			then 99
+			else pillnoghost world (cdr choices);
 
