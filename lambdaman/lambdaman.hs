@@ -69,8 +69,8 @@ stepAndState state world options branches =
 ----- CONFIGURATION SECTION
 
 -- config: 
-DEPTH = 3;		-- depth - max depth of recursive way checks, 0 is only until next junction
-WRONG_TURNS = 17;	-- number of useless turns before we change default direction
+DEPTH = 2;		-- depth - max depth of recursive way checks, 0 is only until next junction
+WRONG_TURNS = 2;	-- number of useless turns before we change default direction
 INCREASE = 200;		-- number of steps after which we increase allowed wrong turns, longer loops are less likely
 DEBUG = 0;		-- 0: no debug but FAILURE, 1: trace choices
 
@@ -371,8 +371,6 @@ anyTowardsMe branches =
 noghosts world options =
 	if atom options then
 		options
-	else if lmVitality (wLambda world) > 0 then
-		options
 	else if isDangerous world (car options) then
 		noghosts world (cdr options)
 	else (car options) : noghosts world (cdr options);
@@ -516,11 +514,11 @@ canKillGhost world options branches =
 anykill fright set =
 	if atom set then 0
 	else let branch = car set in
-	if (iGhostDistance branch && fright > 50) then		
+	if (iGhostDistance branch && fright > 250) then		
 			-- ghost going away probably slow enough	
 			--((iGhostDirection branch == 0 && 7 * fright > 26 * iGhostDistance branch) ||
 			-- ghost coming probably fast enough	
-			--(iGhostDirection branch == 1 && 20 * fright / (iGhostDistance branch - fright) > 29)) then
+			--(iGhostDirection branch == 1 && 20 * fright / (iGhostDistance branch - fright) > 29))) then
 		1
 	else anykill fright (cdr set);
 
@@ -638,7 +636,6 @@ anylong distance set =
 	if iGhostDistance branch > distance then iGhostDistance branch
 	else anylong distance (cdr set);
 
--- old code from 2.1
 powerpill world choices =
 	if mapAtLoc (wMap world) (car choices) == POWER
 		then getDirection world (car choices)
@@ -646,7 +643,6 @@ powerpill world choices =
 			then 99
 			else powerpill world (cdr choices);
 
--- old code from 2.1
 pillnoghost world choices =
 	if mapAtLoc (wMap world) (car choices) == PILL && car (isGhost (wGhosts world) (car choices)) == 0
 		then getDirection world (car choices)
