@@ -19,7 +19,7 @@ init world step =
 step state world =
 	let options = openfields state world in
 	if canKill options world then
-		goKill state world options
+		goKill state options world
 	else
 		let ghostfreeoptions = noghosts world options in
 		let branches = explore world ghostfreeoptions in	
@@ -40,7 +40,7 @@ stepAndState state world options branches =
 		getState state : debug fruitDir 002
 	else let powerDir = canEatPowerPill world options branches in
 		-- we can probably eat a power pill, that is: faster than ghosts
-	if 0 > powerDir then
+	if 99 > powerDir then
 		getState state : debug powerDir 003
 	else let eatSaveDir = canEatSave world options branches in
 		-- save means no ghost and also no ghost towards me on other branches when i choose dead end
@@ -52,11 +52,11 @@ stepAndState state world options branches =
 		getModifiedState state options : debug walkSaveDir 005 -- this is considered lame, no eat, no kill
 	else let eatUnsaveDir = canEatAtLeast world options branches in
 		-- we will probably die, so eat at least some points
-	if 0 > eatUnsaveDir then
+	if 99 > eatUnsaveDir then
 		getState state : debug eatUnsaveDir 006
 	else let dieHarderDir = liveLong world options branches in
 		-- walk the way where the ghost is far away
-	if 0 > dieHarderDir then
+	if 99 > dieHarderDir then
 		getState state : debug dieHarderDir 007
 	else dbug (getState state : 0) 408;	-- FAILURE CANNOT HAPPEN
 
@@ -64,7 +64,7 @@ stepAndState state world options branches =
 
 -- config: 
 DEPTH = 0;		-- depth - max depth of recursive way checks, 0 is only until next junction
-WRONG_TURNS = 4;	-- number of useless turns before we change default direction
+WRONG_TURNS = 2;	-- number of useless turns before we change default direction
 INCREASE = 200;		-- number of steps after which we increase allowed wrong turns, longer loops are less likely
 DEBUG = 0;		-- 0: no debug but FAILURE, 1: trace choices
 
@@ -259,15 +259,22 @@ openhelper map positions =
 	else
 		(car positions) : openhelper map (cdr positions);
 
--- sort options according to default direction
+-- sort options according to default direction -- TODO optimize statements, too tired now
 sortedoptions state world options =
-	let defdir = stDirection state;
+	let defdir = (modulo (stDirection state) 3);
 	    currdir = lmDirection (wLambda world) in
-	let target = (modulo (defdir + currdir + 3) 4) in
-	if target == 0 then order 0 3 1 2 options
-	else if target == 1 then order 1 0 2 3 options
-	else if target == 2 then order 2 1 3 0 options
-	else order 3 2 0 1 options;
+	if defdir == 0 && currdir == 1 then order 0 1 2 3 options
+	else if defdir == 0 && currdir == 2 then order 1 2 3 0 options
+	else if defdir == 0 && currdir == 3 then order 2 3 0 1 options
+	else if defdir == 0 && currdir == 0 then order 3 0 1 2 options
+	else if defdir == 1 && currdir == 2 then order 2 1 3 0 options
+	else if defdir == 1 && currdir == 3 then order 3 2 0 1 options
+	else if defdir == 1 && currdir == 0 then order 0 3 1 2 options
+	else if defdir == 1 && currdir == 1 then order 1 0 3 2 options
+	else if currdir == 1 then order 2 1 0 3 options
+	else if currdir == 2 then order 3 2 1 0 options
+	else if currdir == 3 then order 0 3 2 1 options
+	else order 1 0 3 2 options;
 
 order a b c d list = 
 	item a list : item b list : item c list : item d list : 0;
@@ -332,13 +339,13 @@ isGhost ghosts pos =
         	    gy = cdr (gLocation ghost);
 		    dir = gDirection ghost in
 		if  (gx == x && gy == y) then
-			1:dir
+			(1:dir)
 		else
 		 	isGhost (cdr ghosts) pos;
 
 --any ghosts around the field?
 isDangerous world pos =
-	dangeroushelper (wGhosts world) (posAround pos);
+	car (isGhost (wGhosts world) pos) || dangeroushelper (wGhosts world) (posAround pos);
 
 dangeroushelper ghosts positions =
 	if atom positions then 0
@@ -358,7 +365,7 @@ anyTowardsMe branches =
 noghosts world options =
 	if atom options then
 		options
-	else if car (isGhost (wGhosts world) (car options)) then
+	else if isDangerous world (car options) then
 		noghosts world (cdr options)
 	else (car options) : noghosts world (cdr options);
 
@@ -473,7 +480,7 @@ killDirection options world =
 	if atom options then dbug 0 417	-- FAILURE CANNOT HAPPEN
 	else if car (isGhost (wGhosts world) (car options)) then
 		if lmVitality (wLambda world) > 1 || mapAtLoc (wMap world) (car options) == POWER then
-			dirFromPos (car options) (lmLocation (wLambda world))
+			getDirection world (car options)
 		else killDirection (cdr options) world
 	else killDirection (cdr options) world;
 
@@ -497,7 +504,7 @@ getModifiedState state options =
 		else
 			((stDirection state) : (1 + stTurns state) : (1 + stTotalSteps state))
 	else 
-		((stDirection state) : 0 : (1 + stTotalSteps state));
+		((stDirection state) : (stTurns state) : (1 + stTotalSteps state));
 
 ----- HEURISTICS FOR MOVING SECTION
 
@@ -552,8 +559,7 @@ caneathelper world options branches dir near =
 		 branch = car branches in
 	if iPill branch && near > iPill branch &&
 		(iDeadEnd branch == 0 || incoming == 0) &&
-		(iGhostDistance branch == 0 || iGhostDirection branch == 0) &&
-		0 == isDangerous world (car options) then
+		(iGhostDistance branch == 0 || iGhostDirection branch == 0) then
 			caneathelper world (cdr options) (cdr branches) (getDirection world (car options)) (iPill branch)
 	else caneathelper world (cdr options) (cdr branches) dir near;
 		
@@ -561,8 +567,7 @@ caneathelper world options branches dir near =
 canWalkSave world options branches =
 	if atom branches then 99
 	else if 0 == iDeadEnd (car branches)
-		&& (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches))
-		&& 0 == isDangerous world (car options) then
+		&& (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches)) then
 			getDirection world (car options)
 	else canWalkSave world (cdr options) (cdr branches);
 		
