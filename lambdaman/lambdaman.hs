@@ -227,18 +227,20 @@ helpchoose results deep =
 		else (item 0 results):deep;
 
 -- return bool:distance
+-- TODO auch weglaufende geister essen
 distantghost world choice =
-	let result = distant world choice
+	let result = distant world choice 0
 	in if (car result) == 3
 		then 1:(cdr result)
 		else 0:0;
 
-distant world choice =
+distant world choice iterate =
 	let loc = lmLocation (wLambda world)
-	in distancehelper world (move (cdr (cdr choice)) (car loc) (cdr loc)) loc 1;
+	in distancehelper iterate world (move (cdr (cdr choice)) (car loc) (cdr loc)) loc 1;
 -- 0:nichts, 1:essbar, 2:geist geht, 3:geist kommt evtl, 4:wand
 
-distancehelper world pos last length =
+--iterate erstmal nur für essbares
+distancehelper iterate world pos last length =
 	let map = wMap world in
 	let field = mapAtLoc map pos
 	in if field == 0
@@ -249,8 +251,21 @@ distancehelper world pos last length =
 				else if field == 2 || field == 3 || (field == 4 && (wFruit world)) 
 					then 1:length
 					else if isjunction world pos
-						then 0:length
-						else distancehelper world (nextpos world pos last) pos (length + 1);
+						then if iterate
+							then distantfood world pos last
+							else 0:length
+						else distancehelper iterate world (nextpos world pos last) pos (length + 1);
+
+distantfood world pos last =
+	let near = nearfields world pos last in
+	let next1 = move (car near) (car pos) (cdr pos);
+	    next2 = move (car (cdr near)) (car pos) (cdr pos);
+	    next3 = move (cdr (cdr near)) (car pos) (cdr pos)
+	in if 1 == car (distancehelper 0 world next1 pos 0)
+	|| 1 == car (distancehelper 0 world next2 pos 0)
+	|| 1 == car (distancehelper 0 world next3 pos 0)
+		then 1:0
+		else 0:0;
 
 ghostMoves pos last front =
 	if equalpair (move front (car last) (cdr last)) pos
@@ -312,7 +327,7 @@ eatdistant world choices =
 			then if (atom (cdr choices))
 				then 99
 				else eatdistant world (cdr choices)
-			else if (car (distant world (car choices))) == 1
+			else if (car (distant world (car choices) 1)) == 1
 				then (item 2 (car choices))
 				else if (atom (cdr choices))
 					then 99
@@ -321,7 +336,7 @@ eatdistant world choices =
 
 noghost world choices  =
 	if isjunction world (lmLocation (wLambda world))
-		then let dist = (distant world (car choices))
+		then let dist = (distant world (car choices) 0)
 			 in if (car dist == 0 && (item 1 (car choices)) == 0) || (car dist == 2 && cdr dist > 2)
 				then (item 2 (car choices))
 				else if (atom (cdr choices))
