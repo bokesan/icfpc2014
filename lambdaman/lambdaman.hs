@@ -126,12 +126,12 @@ nearfields world pos last =
 
 sort pos last fields =
 	if (car pos) > (car last)
-		then fields
+		then order 0 1 2 1 fields
 		else if (car last) > (car pos)
-			then order 0 2 3 1 fields
+			then order 2 3 0 3 fields
 			else if (cdr pos) > (cdr last)
-				then order 1 2 3 0 fields
-				else order 0 1 3 2 fields;
+				then order 1 2 3 2 fields
+				else order 3 0 1 0 fields;
 
 field ghosts map x y dir =
 	mapAt map x y : isGhost map ghosts x y : dir;
@@ -186,7 +186,8 @@ direction world state ghosts nextfields front fright fruit =
 			: (powerpill choices)
 			: (pillnoghost choices)
 			: (eatdistant world choices)
-			: (noghost choices)
+			: (noghost world choices)
+			: (noimmediateghost choices)
 			: (pillandghost choices)
 			: (eatenalive choices))
 	in choose results state;
@@ -322,12 +323,22 @@ eatdistant world choices =
 					else eatdistant world (cdr choices)
 		else 99;
 
-noghost choices  =
+noghost world choices  =
+	if isjunction world (lmLocation (wLambda world))
+		then let dist = (car (distant world (car choices)))
+			 in if dist == 0 || dist == 2
+				then (item 2 (car choices))
+				else if (atom (cdr choices))
+					then 99
+					else noghost world (cdr choices)
+		else 99;
+
+noimmediateghost choices =	
 	if (((item 1 (car choices)) == 0) && (((item 0 (car choices)) == 0) == 0))
 		then (item 2 (car choices))
 		else if (atom (cdr choices))
 			then 99
-			else noghost (cdr choices);
+			else noimmediateghost (cdr choices);
 
 pillandghost choices =
 	if (item 0 (car choices)) == 2
