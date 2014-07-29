@@ -48,7 +48,7 @@ step state world =
 
 directionhelp state world =
 	let ghosts = (item 2 world)
-	in direction state ghosts (fields world) (item 2 (item 1 world)) (item 0 (item 1 world));
+	in direction state ghosts (fields world) (item 2 (item 1 world)) (item 0 (item 1 world)) (item 3 world);
 
 fields world =
 	let x = (car (item 1 (item 1 world)));
@@ -76,9 +76,9 @@ and first second =
 			else 0
 		else 0;
 
-direction state ghosts nextfields front fright =
+direction state ghosts nextfields front fright fruit =
 	let choices = trans nextfields front in
-	let results = (	  (fruitorlast choices)
+	let results = (	  (fruitorlast choices fruit)
 			: (eatghosts choices ghosts state fright)
 			: (powerpill choices)
 			: (pillnoghost choices ghosts state)
@@ -102,16 +102,22 @@ choose results =
 		else (car results);
 
 -- TODO check for last pill
-fruitorlast choices =
-	if (item 0 (car choices)) == 4
+fruitorlast choices fruit =
+	if (and ((item 0 (car choices)) == 4) fruit)
 		then (item 2 (car choices))
 		else if (atom (cdr choices))
 			then 99
-			else fruitorlast (cdr choices);
+			else fruitorlast (cdr choices) fruit;
 
 -- todo check for fright and reverse no ghost
 eatghosts choices ghosts state fright =
-	99;
+	if fright == 0
+		then 99
+		else if (item 1 (car choices)) == 1
+			then (item 2 (car choices))
+			else if (atom (cdr choices))
+				then 99
+				else eatghosts (cdr choices) ghosts state fright;
 
 powerpill choices =
 	if (item 0 (car choices)) == 3
