@@ -1,9 +1,54 @@
-; file evil.gasm
-; This program is dedicated to Xykon.
+;;; -*- mode: asm -*-
+;;; file evil.gasm
+;;; This program is dedicated to Xykon.
+;;;
+;;; Main idea is for all the ghosts to chase the lambda
+;;; We offset ghosts into diagonal directions to increase the
+;;; chance to surround the lambda.
 
-def reverse [90]   ; 2 if fleeing, else 0
+; Memory layout
+; -------------
+;
+;  0 - 7    offset table for moving (UP, RIGHT, DOWN, LEFT)
+;  8 - 15   diagonal offsets (NE, SE, SW, NW)
+; 29 - 33   scratch area for dead-end avoidance
+;
+; 200 - ...  locations of up to 10 power pills 
+def powerOffs 200
+def powerEnd  220
+        
+def myX [40]
+def myY [41]
+def myDir [42]
+def myIndex [43]
+def myStatus [44]
+def lamX [45]
+def lamY [46]
+
+def savedX [47]
+def savedY [48]
+
+def distToLambda [49]           ; distance from me to lambda
+
+def destX [50]                  ; current destination
+def destY [51]
+
+;;; fruit location, if known
+def fruitX [52]
+def fruitY [53]        
+        
+def shouldFlee [90]
 def revDir  [91]
-def frightDistance 15 ; only flee if distance <= this
+
+
+; Directions
+def UP    0
+def RIGHT 1
+def DOWN  2
+def LEFT  3
+
+; Status
+def FRIGHTENED 1
 
 
 ; absolute value of a. clobbers b
@@ -26,25 +71,70 @@ macro distance
 endm
 
 ; distance from me to lambda
-macro distToLambda
-    sys index
-    sys curpos
-    mov c,a
-    mov d,b
+macro setDistToLambda
+    mov c, myX
+    mov d, myY
     sys lambda1
     distance
+    mov distToLambda,a
 endm
 
-macro flipdir
-    ; reverse should be 0 to keep dir, or 2 to flip:
-    ; 0 -> 2
-    ; 1 -> 3
-    ; 2 -> 0
-    ; 3 -> 1
-    add a,reverse
-    and a,3
+;;; remove lambda loc from power pills
+macro cleanPower_fast
+        mov a,powerOffs
+        do
+                if [a] /= lamX
+                        add a,2
+                else
+                        inc a
+                        if [a] /= lamY
+                                inc a
+                        else
+                                dec a
+                                mov [a],0
+                                add a,2
+                        fi
+                fi
+        while a < powerEnd
 endm
 
+macro cleanPower
+        mov c,powerOffs
+        do
+                mov a,[c]
+                if a /= 0
+                        inc c
+                        mov b,[c]
+                        sys map
+                        if a /= 3
+                                dec c
+                                mov [c],0
+                                inc c
+                        fi
+                        inc c
+                else
+                        add c,2
+                fi
+        while c < powerEnd
+endm
+        
+;;; add power pill at myX,myY
+macro addPower
+        mov a,powerOffs
+        do
+                if [a] /= 0     ; used slot?
+                        add a,2
+                else
+        		; set slot and stop 
+                        mov [a], myX
+                        inc a
+                        mov [a], myY
+                        mov a, powerEnd
+                fi
+        while a < powerEnd
+endm
+
+        
 ; a modulo b, clobbering c
 macro mod a,b, c
     mov c, a
@@ -56,30 +146,23 @@ endm
 ; move x,y into direction.
 ; dir must not be indirect
 ; requires direction offsets at memory location 0-7 to be initialized
-macro moveDir x,y,dir
-    mul dir,2
-    add a,[dir]
-    inc dir
-    add b,[dir]
-    div dir,2 ; restore original value
+macro moveDir
+    mul c,2
+    add a,[c]
+    inc c
+    add b,[c]
+    div c,2 ; restore original value
 endm
 
-; move x,y to the right of dir
-macro right x,y,dir
-    inc dir
-    and dir,3
-    moveDir x,y,dir
-    dec dir
-    and dir,3
-endm
-
-; move x,y to the left of dir
-macro left x,y,dir
-    dec dir
-    and dir,3
-    moveDir x,y,dir
-    inc dir
-    and dir,3
+; move two steps
+macro moveDir2
+    mul c,2
+    add a,[c]
+    add a,[c]
+    inc c
+    add b,[c]
+    add b,[c]
+    div c,2 ; restore original value
 endm
 
 ; are we looking into a dead end?
@@ -89,39 +172,44 @@ endm
 ; clobbers all registers
 macro isDeadEnd
     mov e,0
-    do while e == 0
-        moveDir a,b,c  ; advance one step
-        mov d,a        ; save x
+    mov f,0 ; counter to limit iteration
+    do
+        moveDir        ; advance one step
+        mov savedX,a        ; save location
+        mov savedY,b
         sys map
         mov e,255 ; stop tag
         if a /= 0
             ; not a wall, test left and right
             mov e,0
-            mov a,d  ; restore x
-            right a,b,c
+            mov a,savedX  ; restore x
+            inc c : and c,3  ; turn right
+            moveDir
             mov d,a  ; save x
             sys map
             mov e,a  ; right cell contents
             mov a,d
-            left a,b,c
-            left a,b,c
+            add c,2 : and c,3  ; turn around
+            moveDir2
             mov d,a  ; save x
             sys map
             add e,a  ; add left cell contents
             ; if e > 0, we are not in a dead end
-            mov a,d
-            right a,b,c ; back to original pos
+            inc c : and c,3 ; original direction
+            mov a,savedX
+            mov b,savedY
         fi
-    od
+        inc f
+        if f >= 5
+            mov e,1
+        fi
+    while e == 0
     ; now, if e = 255, we have a dead end
     if e <= 254
         mov e,0
     fi
 endm
 
-
-def myX [92]
-def myY [93]
 
 ; is a ghost with a lower index at the same position?
 macro lowerGhostOnLoc
@@ -131,9 +219,6 @@ macro lowerGhostOnLoc
             mov a,5
         fi
         mov c,a
-        sys curpos
-        mov myX,a
-        mov myY,b
         mov f,0
         do
             dec c     ; next lower ghost
@@ -148,93 +233,211 @@ macro lowerGhostOnLoc
     mov a,f
 endm
 
+; choose direction to move:
+;    c, if a > b
+;    d, if a <= b
+; move, then halt
 macro movelarger
-    mov e, c
-    if d /= revDir
-        mov e,d
-    fi
-    if a >= b
-        if a /= b
-            mov e, c
-             ; fi;
-             ; sys index;
-             ; and a 1;
-             ; if a /= 0 then
-             ;     e := c
+    if shouldFlee /= 0
+        if a >= b
+            mov e,d
+            mov f,c
+        else
+            mov e,c
+            mov f,d
+        fi
+        add e,2
+        and e,3
+        add f,2
+        and f,3
+    else
+        if a >= b
+            mov e,c
+            mov f,d
+        else
+            mov e,d
+            mov f,c
         fi
     fi
-    mov a, e : flipdir : sys move
+    ; direction e into wall? then f
+    mov a,myX
+    mov b,myY
+    mov c,e
+    moveDir
+    sys map
+    if a /= 0  ; no wall
+        mov b,myDir
+        add b,2
+        and b,3
+        if e /= b ; and not reverse of current
+            mov a,e  ; better dir
+        else
+            mov a,f
+        fi
+    else
+        mov a,f
+    fi
+    sys move
     hlt
 endm
 
 
-macro kill
-    sys index
-    sys curpos
-    mov c, a
-    mov d, b
-    sys lambda1
-    mov e, a
-    mov f, b
-    if e <= c
+macro moveToDest
+    if lamX <= myX
         ; lambda to the left
-        sub c, e    ; c = delta X
-        if f <= d
-            ; upper left
-            sub d,f    ; d = delta Y
-            mov a,d: mov b,c: mov c,0: mov d,3
-            movelarger
+        mov d, LEFT
+        mov b, myX
+        sub b, lamX    ; b = delta X
+        if lamY <= myY
+            ; lambda is in upper left
+            mov a, myY
+            sub a, lamY    ; a = delta Y
+            mov c,UP
+        else
+            ; lower left
+            mov a, lamY
+            sub a, myY    ; a = delta Y
+            mov c,DOWN
         fi
-        ; lower left
-        sub f,d    ; f = delta Y
-        mov a,f: mov b,c: mov c,2: mov d,3
-        movelarger
+    else
+        ; lambda is to the right
+        mov d, RIGHT
+        mov b,lamX
+        sub b,myX     ; b = delta X
+        if lamY <= myY
+            ; upper right
+            mov a, myY
+            sub a, lamY    ; a = delta Y
+            mov c,UP
+        else
+            ; lower right
+            mov a,lamY
+            sub a,myY
+            mov c,DOWN
+        fi
     fi
-    ; lambda is to the right
-    sub e,c     ; e = delta X
-    if f <= d
-        ; upper right
-        sub d,f     ; d = delta y
-        mov a,d: mov b,e: mov c,0: mov d,1
-        movelarger
-    fi
-    ; lower right
-    sub f,d       ; f = delta Y
-    mov a,f: mov b,e; mov c,2; mov d,1
     movelarger
 endm
 
 macro init
     ; initialize direction offsets
-    ;mov [0], 0
-    mov [1], 255
-    mov [2], 1
-    ;mov [3], 0
-    ;mov [4], 0
-    mov [5], 1
-    mov [6], 255
-    ;mov [7], 0
+    mov [1], 255                ; 0,-1 : up
+    mov [2], 1                  ; 1,0  : right
+    mov [5], 1                  ; 0,1  : down
+    mov [6], 255                ; -1,0 : left
+
+    sys index
+    mov myIndex,a
+    sys curpos
+    mov myX,a
+    mov myY,b
+    sys map
+    if a >= 4
+        if a <= 4
+            mov fruitX,myY
+            mov fruitY,myY
+        fi
+    fi
+    mov a,myIndex
+    sys status
+    mov myStatus,a
+    mov myDir,b
+    sys lambda1
+    mov lamX,a
+    mov lamY,b
 endm
 
+;;; choose destination
+;;; if we are near the lambda, move onto it
+;;; further away: one step diag determined by ghost index
+;;; even further away: two step diag
+;;; ...
+macro computeDest
+        mov destX,lamX          ; start with lambda coords
+        mov destY,lamY
+        mov f, 0                ; offset factor
+        mov a, distToLambda
+        do while a >= 3
+                inc f
+                div a,2
+        od
+#if GHOST == 0
+        mov a,1 : mov b,255
+#endif
+#if GHOST == 1
+        mov a,1 : mov b,1
+#endif
+#if GHOST == 2
+        mov a,255 : mov b,1
+#endif
+#if GHOST == 3
+        mov a,255 : mov b,255
+#endif
+        mul a,f                 ; multiply by factor
+        mul b,f                 ; if very near, factor == 0, so we target lambda
+        add destX,a
+        add destY,b
+endm
+
+        
 ; main entry point
     init
-    lowerGhostOnLoc
-    if a /= 0 : hlt : fi
-    sys index
-    sys status
+    ; lowerGhostOnLoc
+    ; if a /= 0 : hlt : fi
+    mov b, myDir
     add b,2
     and b,3
     mov revDir, b    ; opposite of current direction
-    mov reverse, 0
-    if a /= 0
-        ; I'm frightened or invisible. Maybe I should flee
+    if myStatus /= 1
+        mov shouldFlee,0
+    else
+        ; I'm frightened. Maybe I should flee
         ; But only if I'm near the lambda-man
-        distToLambda
-        if a <= frightDistance
-            mov reverse, 2
+        setDistToLambda
+        if distToLambda <= P_FRIGHT
+            mov shouldFlee, 2
+        else
+            mov shouldFlee, 0
         fi
     fi
-    kill
+
+    ; count directions which are not dead ends
+    ; if we have only one, move in that direction
+    ; we use 29 as counter, and 30 - 33 to mark dead ends
+    mov [29],0
+    mov [30],0
+    mov [31],0
+    mov [32],0
+    mov [33],0
+    mov c,0
+    do
+        mov a,myX
+        mov b,myY
+        isDeadEnd
+        inc [29]
+        if e /= 0
+            mov d,c
+            add d,30
+            mov [d],1
+            dec [29]
+        fi
+        if [29] >= 2
+            mov c,4 ; exit loop
+        fi
+        inc c  ; next direction
+    while c < 4
+    if [29] /= 1
+        computeDest
+        moveToDest
+        hlt
+    fi
+    ; only one non-dead-end. Use it
+    mov a,29
+    do
+        inc a
+    while [a] > 0
+    sub a,30
+    sys move
     hlt
 
 ; Xykon: "I think I just had an evilgasm". OOTS #197: A Change of Scale
