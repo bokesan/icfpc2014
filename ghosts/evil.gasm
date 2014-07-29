@@ -13,9 +13,6 @@
 ;  8 - 15   diagonal offsets (NE, SE, SW, NW)
 ; 29 - 33   scratch area for dead-end avoidance
 ;
-; 200 - ...  locations of up to 10 power pills 
-def powerOffs 200
-def powerEnd  220
         
 def myX [40]
 def myY [41]
@@ -79,69 +76,6 @@ macro setDistToLambda
     mov distToLambda,a
 endm
 
-;;; remove lambda loc from power pills
-macro cleanPower_fast
-        mov a,powerOffs
-        do
-                if [a] /= lamX
-                        add a,2
-                else
-                        inc a
-                        if [a] /= lamY
-                                inc a
-                        else
-                                dec a
-                                mov [a],0
-                                add a,2
-                        fi
-                fi
-        while a < powerEnd
-endm
-
-macro cleanPower
-        mov c,powerOffs
-        do
-                mov a,[c]
-                if a /= 0
-                        inc c
-                        mov b,[c]
-                        sys map
-                        if a /= 3
-                                dec c
-                                mov [c],0
-                                inc c
-                        fi
-                        inc c
-                else
-                        add c,2
-                fi
-        while c < powerEnd
-endm
-        
-;;; add power pill at myX,myY
-macro addPower
-        mov a,powerOffs
-        do
-                if [a] /= 0     ; used slot?
-                        add a,2
-                else
-        		; set slot and stop 
-                        mov [a], myX
-                        inc a
-                        mov [a], myY
-                        mov a, powerEnd
-                fi
-        while a < powerEnd
-endm
-
-        
-; a modulo b, clobbering c
-macro mod a,b, c
-    mov c, a
-    div c, b
-    mul c, b
-    sub a, c
-endm
 
 ; move x,y into direction.
 ; dir must not be indirect
@@ -210,28 +144,6 @@ macro isDeadEnd
     fi
 endm
 
-
-; is a ghost with a lower index at the same position?
-macro lowerGhostOnLoc
-    sys index
-    if a /= 0
-        if a >= 6 ; dont waste too many cycles here
-            mov a,5
-        fi
-        mov c,a
-        mov f,0
-        do
-            dec c     ; next lower ghost
-            mov a, c
-            sys curpos
-            mov f, 1    ; true
-            if a /= myX : mov f,0 : fi
-            if b /= myY : mov f,0 : fi
-            if f /= 0 : mov c,0 : fi
-        while c > 0
-    fi
-    mov a,f
-endm
 
 ; choose direction to move:
 ;    c, if a > b
@@ -382,8 +294,6 @@ endm
         
 ; main entry point
     init
-    ; lowerGhostOnLoc
-    ; if a /= 0 : hlt : fi
     mov b, myDir
     add b,2
     and b,3
