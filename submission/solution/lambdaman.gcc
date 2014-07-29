@@ -1,0 +1,2753 @@
+LD 0 0 ; world
+LDF 53 ; step
+LDF 9 ; init
+AP 2
+RTN
+LD 0 0 ; state
+LD 1 1 ; step
+CONS
+RTN
+LDC 1
+LDC 0
+LDC 0
+CONS
+CONS
+DUM 1
+LDF 5 ; _0
+RAP 1
+RTN
+LD 3 0 ; state
+LD 3 1 ; world
+LD 1 0 ; ghostfreeoptions
+LD 0 0 ; branches
+LDF 275 ; stepAndState
+AP 4
+RTN
+LD 2 1 ; world
+LD 0 0 ; ghostfreeoptions
+LDF 1439 ; explore
+AP 2
+DUM 1
+LDF 18 ; _1
+RAP 1
+RTN
+LD 1 0 ; state
+LD 0 0 ; options
+LD 1 1 ; world
+LDF 1935 ; goKill
+AP 3
+JOIN
+LD 1 1 ; world
+LD 0 0 ; options
+LDF 1414 ; noghosts
+AP 2
+DUM 1
+LDF 25 ; _2
+RAP 1
+JOIN
+LD 0 0 ; options
+LD 1 1 ; world
+LDF 1868 ; canKill
+AP 2
+SEL 33 39
+RTN
+LD 0 0 ; state
+LD 0 1 ; world
+LDF 820 ; openfields
+AP 2
+DUM 1
+LDF 47 ; _5
+RAP 1
+RTN
+LD 9 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; dieHarderDir
+LDC 7
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 9 0 ; state
+LDF 1954 ; getState
+AP 1
+LDC 0
+CONS
+LDC 408
+DBUG
+JOIN
+LDC 99
+LD 0 0 ; dieHarderDir
+CGT
+SEL 61 70
+RTN
+LD 8 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; eatUnsaveDir
+LDC 6
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 8 1 ; world
+LD 8 2 ; options
+LD 8 3 ; branches
+LDF 2592 ; liveLong
+AP 3
+DUM 1
+LDF 78 ; _8
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; eatUnsaveDir
+CGT
+SEL 83 92
+RTN
+LD 7 0 ; state
+LD 7 2 ; options
+LDF 2028 ; getModifiedState
+AP 2
+LD 0 0 ; walkSaveDir
+LDC 5
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 7 1 ; world
+LD 7 2 ; options
+LD 7 3 ; branches
+LDF 2564 ; canEatAtLeast
+AP 3
+DUM 1
+LDF 101 ; _11
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; walkSaveDir
+CGT
+SEL 106 116
+RTN
+LD 6 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; eatSaveDir
+LDC 4
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 6 1 ; world
+LD 6 2 ; options
+LD 6 3 ; branches
+LDF 2489 ; canWalkSave
+AP 3
+DUM 1
+LDF 125 ; _14
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; eatSaveDir
+CGT
+SEL 130 139
+RTN
+LD 5 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; powerDir
+LDC 3
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 5 1 ; world
+LD 5 2 ; options
+LD 5 3 ; branches
+LDF 2330 ; canEatSave
+AP 3
+DUM 1
+LDF 148 ; _17
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; powerDir
+CGT
+SEL 153 162
+RTN
+LD 4 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; fruitDir
+LDC 2
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 4 1 ; world
+LD 4 2 ; options
+LD 4 3 ; branches
+LDF 2247 ; canEatPowerPill
+AP 3
+DUM 1
+LDF 171 ; _20
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; fruitDir
+CGT
+SEL 176 185
+RTN
+LD 3 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; pillnoghost
+CONS
+JOIN
+LD 3 1 ; world
+LD 3 2 ; options
+LD 3 3 ; branches
+LDF 2132 ; canEatFruit
+AP 3
+DUM 1
+LDF 194 ; _23
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; pillnoghost
+CGT
+SEL 199 205
+RTN
+LD 2 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; powerpill
+CONS
+JOIN
+LD 2 1 ; world
+LD 2 2 ; options
+LDF 2740 ; pillnoghost
+AP 2
+DUM 1
+LDF 214 ; _26
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; powerpill
+CGT
+SEL 219 225
+RTN
+LD 1 0 ; state
+LDF 1954 ; getState
+AP 1
+LD 0 0 ; killDir
+LDC 1
+LDF 293 ; debug
+AP 2
+CONS
+JOIN
+LD 1 1 ; world
+LD 1 2 ; options
+LDF 2696 ; powerpill
+AP 2
+DUM 1
+LDF 233 ; _29
+RAP 1
+JOIN
+LDC 99
+LD 0 0 ; killDir
+CGT
+SEL 238 247
+RTN
+LD 0 0 ; state
+LDF 1954 ; getState
+AP 1
+LDC 0
+CONS
+JOIN
+LD 0 1 ; world
+LD 0 2 ; options
+LD 0 3 ; branches
+LDF 2068 ; canKillGhost
+AP 3
+DUM 1
+LDF 255 ; _32
+RAP 1
+JOIN
+LD 0 2 ; options
+ATOM
+SEL 260 266
+RTN
+LDC 2
+RTN
+LDC 2
+RTN
+LDC 200
+RTN
+LDC 0
+RTN
+LD 0 0 ; return
+LD 0 1 ; value
+DBUG
+JOIN
+LD 0 0 ; return
+JOIN
+LDF 285 ; DEBUG
+AP 0
+SEL 287 291
+RTN
+LDC 0
+RTN
+LDC 1
+RTN
+LDC 2
+RTN
+LDC 3
+RTN
+LDC 4
+RTN
+LDC 5
+RTN
+LDC 6
+RTN
+LDC 127
+LDC 401
+DBUG
+JOIN
+LDC 127
+LDC 402
+DBUG
+JOIN
+LDC 127
+JOIN
+LD 0 0 ; field
+LDF 297 ; WALL
+AP 0
+CEQ
+SEL 311 315
+JOIN
+LDC 127
+JOIN
+LD 0 0 ; field
+LDF 309 ; GHOST_START
+AP 0
+CEQ
+SEL 319 321
+JOIN
+LDC 127
+JOIN
+LD 0 0 ; field
+LDF 307 ; LAMBDA_START
+AP 0
+CEQ
+SEL 327 329
+JOIN
+LDC 137
+JOIN
+LD 0 0 ; field
+LDF 299 ; EMPTY
+AP 0
+CEQ
+SEL 335 337
+JOIN
+LDC 137
+JOIN
+LD 0 0 ; field
+LDF 305 ; FRUIT
+AP 0
+CEQ
+SEL 343 345
+JOIN
+LDC 137
+JOIN
+LD 0 0 ; field
+LDF 303 ; POWER
+AP 0
+CEQ
+SEL 351 353
+JOIN
+LD 0 0 ; field
+LDF 301 ; PILL
+AP 0
+CEQ
+SEL 359 361
+RTN
+LD 0 0 ; world
+CAR
+RTN
+LD 0 0 ; world
+CDR
+CAR
+RTN
+LD 0 0 ; world
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; world
+CDR
+CDR
+CDR
+RTN
+LD 0 1 ; x
+LD 0 2 ; y
+LD 0 0 ; map
+LDF 618 ; item
+AP 2
+LDF 618 ; item
+AP 2
+RTN
+LD 0 1 ; loc
+CAR
+LD 0 1 ; loc
+CDR
+LD 0 0 ; map
+LDF 618 ; item
+AP 2
+LDF 618 ; item
+AP 2
+RTN
+LD 0 0 ; m
+CAR
+RTN
+LD 0 0 ; m
+CDR
+CAR
+RTN
+LD 0 0 ; m
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; m
+CDR
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; m
+CDR
+CDR
+CDR
+CDR
+RTN
+LD 0 0 ; g
+CAR
+RTN
+LD 0 0 ; g
+CDR
+CAR
+RTN
+LD 0 0 ; g
+CDR
+CDR
+RTN
+LD 0 0 ; state
+CAR
+RTN
+LD 0 0 ; state
+CDR
+CAR
+RTN
+LD 0 0 ; state
+CDR
+CDR
+RTN
+LD 0 0 ; info
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CDR
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CDR
+CDR
+CDR
+CDR
+CAR
+RTN
+LD 0 0 ; info
+CDR
+CDR
+CDR
+CDR
+CDR
+CDR
+RTN
+LDC 0
+LD 0 0 ; bool
+LD 0 1 ; info
+LDF 589 ; replace
+AP 3
+RTN
+LDC 1
+LD 0 0 ; value
+LD 0 1 ; info
+LDF 589 ; replace
+AP 3
+RTN
+LDC 2
+LD 0 0 ; ticks
+LD 0 1 ; info
+LDF 589 ; replace
+AP 3
+RTN
+LDC 3
+LD 0 0 ; ticks
+LD 0 1 ; info
+LDF 589 ; replace
+AP 3
+RTN
+LD 0 1 ; info
+LDF 454 ; iDeadEnd
+AP 1
+LD 0 1 ; info
+LDF 457 ; iPill
+AP 1
+LD 0 1 ; info
+LDF 461 ; iFruitDistance
+AP 1
+LD 0 1 ; info
+LDF 466 ; iPowerDistance
+AP 1
+LD 0 1 ; info
+LDF 472 ; iGhostDistance
+AP 1
+LD 0 1 ; info
+LDF 479 ; iGhostDirection
+AP 1
+LD 0 0 ; posbase
+CONS
+CONS
+CONS
+CONS
+CONS
+CONS
+RTN
+LDC 4
+LD 0 0 ; ticks
+LDC 5
+LD 0 1 ; direction
+LD 0 2 ; info
+LDF 589 ; replace
+AP 3
+LDF 589 ; replace
+AP 3
+RTN
+LD 0 0 ; endpoint
+CAR
+RTN
+LD 0 0 ; endpoint
+CDR
+CAR
+RTN
+LD 0 0 ; endpoint
+CDR
+CDR
+RTN
+LD 0 1 ; value
+JOIN
+LD 0 1 ; value
+LD 0 2 ; tuple
+CDR
+CONS
+JOIN
+LD 0 2 ; tuple
+ATOM
+SEL 566 568
+JOIN
+LD 0 2 ; tuple
+CAR
+LD 0 0 ; index
+LDC 1
+SUB
+LD 0 1 ; value
+LD 0 2 ; tuple
+CDR
+LDF 589 ; replace
+AP 3
+CONS
+JOIN
+LD 0 0 ; index
+LDC 0
+CEQ
+SEL 573 577
+RTN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 0 2 ; dir
+LD 0 1 ; last
+LDF 712 ; posFromDir
+AP 2
+LD 0 0 ; pos
+LDF 1249 ; samepos
+AP 2
+SEL 594 596
+RTN
+LD 0 1 ; list
+CAR
+JOIN
+LD 0 0 ; index
+LDC 1
+SUB
+LD 0 1 ; list
+CDR
+LDF 618 ; item
+AP 2
+JOIN
+LD 0 0 ; index
+LDC 0
+CEQ
+SEL 607 610
+RTN
+LDC 0
+JOIN
+LDC 1
+LD 0 0 ; list
+CDR
+LDF 632 ; count
+AP 1
+ADD
+JOIN
+LD 0 0 ; list
+ATOM
+SEL 623 625
+RTN
+LD 0 1 ; second
+JOIN
+LD 0 0 ; first
+JOIN
+LD 0 0 ; first
+LD 0 1 ; second
+CGT
+SEL 636 638
+RTN
+LD 0 0 ; first
+JOIN
+LD 0 0 ; first
+LD 0 1 ; second
+LDF 640 ; min
+AP 2
+JOIN
+LD 0 1 ; second
+JOIN
+LD 0 1 ; second
+LDC 0
+CEQ
+SEL 645 647
+JOIN
+LD 0 0 ; first
+LDC 0
+CEQ
+SEL 652 654
+RTN
+LD 0 0 ; first
+JOIN
+LD 0 1 ; second
+JOIN
+LD 0 0 ; first
+LD 0 1 ; second
+CGT
+SEL 664 666
+RTN
+LD 0 0 ; x
+LD 0 1 ; y
+LDC 1
+ADD
+CONS
+JOIN
+LD 0 0 ; x
+LDC 1
+SUB
+LD 0 1 ; y
+CONS
+JOIN
+LD 0 0 ; x
+LDC 1
+ADD
+LD 0 1 ; y
+CONS
+JOIN
+LD 1 0 ; dir
+LDC 2
+CEQ
+SEL 673 679
+JOIN
+LD 0 0 ; x
+LD 0 1 ; y
+LDC 1
+SUB
+CONS
+JOIN
+LD 1 0 ; dir
+LDC 1
+CEQ
+SEL 685 691
+JOIN
+LD 1 0 ; dir
+LDC 0
+CEQ
+SEL 696 702
+RTN
+LD 0 1 ; base
+CAR
+LD 0 1 ; base
+CDR
+DUM 2
+LDF 707 ; _75
+RAP 2
+RTN
+LD 0 1 ; option
+LD 0 0 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 411 ; lmLocation
+AP 1
+LDF 752 ; dirFromPos
+AP 2
+RTN
+LDC 2
+JOIN
+LDC 0
+JOIN
+LDC 3
+JOIN
+LD 0 3 ; ypos
+LD 0 1 ; ybase
+CGT
+SEL 729 731
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; xbase
+LD 0 2 ; xpos
+CGT
+SEL 733 735
+JOIN
+LD 0 2 ; xpos
+LD 0 0 ; xbase
+CGT
+SEL 740 742
+RTN
+LD 0 1 ; base
+CAR
+LD 0 1 ; base
+CDR
+LD 0 0 ; pos
+CAR
+LD 0 0 ; pos
+CDR
+DUM 4
+LDF 747 ; _82
+RAP 4
+RTN
+LD 0 0 ; loc
+LDF 803 ; posAround
+AP 1
+RTN
+LD 0 0 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 411 ; lmLocation
+AP 1
+DUM 1
+LDF 764 ; _83
+RAP 1
+RTN
+LD 0 0 ; x
+LD 0 1 ; y
+LDC 1
+SUB
+CONS
+LD 0 0 ; x
+LDC 1
+ADD
+LD 0 1 ; y
+CONS
+LD 0 0 ; x
+LD 0 1 ; y
+LDC 1
+ADD
+CONS
+LD 0 0 ; x
+LDC 1
+SUB
+LD 0 1 ; y
+CONS
+LDC 0
+CONS
+CONS
+CONS
+CONS
+RTN
+LD 0 0 ; pos
+CAR
+LD 0 0 ; pos
+CDR
+DUM 2
+LDF 777 ; _84
+RAP 2
+RTN
+LD 0 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 1 ; loc
+LDF 803 ; posAround
+AP 1
+LDF 860 ; openhelper
+AP 2
+RTN
+LD 0 1 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 0 ; state
+LD 0 1 ; world
+LD 0 1 ; world
+LDF 768 ; posAroundMe
+AP 1
+LDF 1071 ; sortedoptions
+AP 3
+LDF 860 ; openhelper
+AP 2
+RTN
+LD 0 0 ; map
+LD 0 1 ; positions
+CDR
+LDF 860 ; openhelper
+AP 2
+JOIN
+LD 0 1 ; positions
+CAR
+LD 0 0 ; map
+LD 0 1 ; positions
+CDR
+LDF 860 ; openhelper
+AP 2
+CONS
+JOIN
+LD 0 1 ; positions
+JOIN
+LD 0 0 ; map
+LD 0 1 ; positions
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 297 ; WALL
+AP 0
+CEQ
+SEL 833 839
+JOIN
+LD 0 1 ; positions
+ATOM
+SEL 848 850
+RTN
+LD 0 1 ; currdir
+LDC 1
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 2
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 3
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 0
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 2
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 3
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 0
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; currdir
+LDC 1
+CEQ
+JOIN
+LDC 0
+JOIN
+LDC 0
+LDC 3
+LDC 2
+LDC 1
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LDC 1
+LDC 0
+LDC 3
+LDC 2
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LDC 3
+LDC 2
+LDC 1
+LDC 0
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 1 ; currdir
+LDC 3
+CEQ
+SEL 912 920
+JOIN
+LDC 2
+LDC 1
+LDC 0
+LDC 3
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 1 ; currdir
+LDC 2
+CEQ
+SEL 928 936
+JOIN
+LDC 1
+LDC 0
+LDC 3
+LDC 2
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 1 ; currdir
+LDC 1
+CEQ
+SEL 941 949
+JOIN
+LDC 0
+LDC 3
+LDC 1
+LDC 2
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 1
+CEQ
+SEL 906 910
+SEL 954 962
+JOIN
+LDC 3
+LDC 2
+LDC 0
+LDC 1
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 1
+CEQ
+SEL 900 904
+SEL 967 975
+JOIN
+LDC 2
+LDC 1
+LDC 3
+LDC 0
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 1
+CEQ
+SEL 894 898
+SEL 981 989
+JOIN
+LDC 3
+LDC 0
+LDC 1
+LDC 2
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 1
+CEQ
+SEL 888 892
+SEL 995 1003
+JOIN
+LDC 2
+LDC 3
+LDC 0
+LDC 1
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 0
+CEQ
+SEL 882 886
+SEL 1009 1017
+JOIN
+LDC 1
+LDC 2
+LDC 3
+LDC 0
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 0
+CEQ
+SEL 876 880
+SEL 1023 1031
+JOIN
+LDC 0
+LDC 1
+LDC 2
+LDC 3
+LD 1 2 ; options
+LDF 1086 ; order
+AP 5
+JOIN
+LD 0 0 ; defdir
+LDC 0
+CEQ
+SEL 870 874
+SEL 1037 1045
+JOIN
+LD 0 0 ; defdir
+LDC 0
+CEQ
+SEL 864 868
+SEL 1051 1059
+RTN
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+LDC 3
+LDF 1256 ; modulo
+AP 2
+LD 0 1 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 415 ; lmDirection
+AP 1
+DUM 2
+LDF 1065 ; _127
+RAP 2
+RTN
+LD 0 0 ; a
+LD 0 4 ; list
+LDF 618 ; item
+AP 2
+LD 0 1 ; b
+LD 0 4 ; list
+LDF 618 ; item
+AP 2
+LD 0 2 ; c
+LD 0 4 ; list
+LDF 618 ; item
+AP 2
+LD 0 3 ; d
+LD 0 4 ; list
+LDF 618 ; item
+AP 2
+LDC 0
+CONS
+CONS
+CONS
+CONS
+RTN
+LD 0 1 ; list
+CAR
+JOIN
+LD 0 0 ; index
+LDC 1
+SUB
+LD 0 1 ; list
+CDR
+LDF 618 ; item
+AP 2
+JOIN
+LD 0 0 ; index
+LDC 0
+CEQ
+SEL 1108 1111
+RTN
+LD 0 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 1 ; pos
+LDF 803 ; posAround
+AP 1
+LDC 0
+LDF 1167 ; junctionhelper
+AP 3
+RTN
+LD 0 0 ; map
+LD 0 1 ; positions
+CDR
+LD 0 2 ; empty
+LDF 1167 ; junctionhelper
+AP 3
+JOIN
+LD 0 0 ; map
+LD 0 1 ; positions
+CDR
+LD 0 2 ; empty
+LDC 1
+ADD
+LDF 1167 ; junctionhelper
+AP 3
+JOIN
+LDC 0
+JOIN
+LD 0 0 ; map
+LD 0 1 ; positions
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDC 0
+CEQ
+SEL 1134 1141
+JOIN
+LDC 1
+JOIN
+LD 0 1 ; positions
+ATOM
+SEL 1150 1152
+JOIN
+LD 0 2 ; empty
+LDC 2
+CGT
+SEL 1161 1163
+RTN
+LD 1 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 1 2 ; last
+LD 0 0 ; near
+LDF 1237 ; exclude
+AP 2
+LDF 1212 ; poshelper
+AP 2
+RTN
+LD 0 1 ; pos
+LDF 803 ; posAround
+AP 1
+DUM 1
+LDF 1172 ; _136
+RAP 1
+RTN
+LD 0 0 ; map
+LD 0 1 ; options
+CDR
+LDF 1212 ; poshelper
+AP 2
+JOIN
+LD 0 1 ; options
+CAR
+JOIN
+LDC 0
+LDC 0
+CONS
+JOIN
+LD 0 0 ; map
+LD 0 1 ; options
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 297 ; WALL
+AP 0
+CEQ
+SEL 1189 1195
+JOIN
+LD 0 1 ; options
+ATOM
+SEL 1198 1202
+RTN
+LD 0 1 ; positions
+CDR
+JOIN
+LD 0 1 ; positions
+CAR
+LD 0 0 ; remove
+LD 0 1 ; positions
+CDR
+LDF 1237 ; exclude
+AP 2
+CONS
+JOIN
+LD 0 1 ; positions
+JOIN
+LD 0 0 ; remove
+LD 0 1 ; positions
+CAR
+LDF 1249 ; samepos
+AP 2
+SEL 1216 1219
+JOIN
+LD 0 1 ; positions
+ATOM
+SEL 1228 1230
+RTN
+LD 0 0 ; first
+CDR
+LD 0 1 ; second
+CDR
+CEQ
+JOIN
+LDC 0
+JOIN
+LD 0 0 ; first
+CAR
+LD 0 1 ; second
+CAR
+CEQ
+SEL 1241 1247
+RTN
+LD 0 0 ; number
+LD 0 1 ; base
+LD 0 0 ; number
+LD 0 1 ; base
+DIV
+MUL
+SUB
+RTN
+LD 0 3 ; gy
+LD 0 1 ; y
+CEQ
+JOIN
+LDC 0
+JOIN
+LDC 1
+LD 0 4 ; dir
+CONS
+JOIN
+LD 2 0 ; ghosts
+CDR
+LD 2 1 ; pos
+LDF 1315 ; isGhost
+AP 2
+JOIN
+LD 0 2 ; gx
+LD 0 0 ; x
+CEQ
+SEL 1264 1268
+SEL 1270 1274
+RTN
+LD 1 1 ; pos
+CAR
+LD 1 1 ; pos
+CDR
+LD 0 0 ; ghost
+LDF 435 ; gLocation
+AP 1
+CAR
+LD 0 0 ; ghost
+LDF 435 ; gLocation
+AP 1
+CDR
+LD 0 0 ; ghost
+LDF 439 ; gDirection
+AP 1
+DUM 5
+LDF 1280 ; _151
+RAP 5
+RTN
+LDC 0
+LDC 0
+CONS
+JOIN
+LD 0 0 ; ghosts
+CAR
+DUM 1
+LDF 1286 ; _152
+RAP 1
+JOIN
+LD 0 0 ; ghosts
+ATOM
+SEL 1305 1309
+RTN
+LDC 1
+JOIN
+LD 0 0 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 0 1 ; pos
+LDF 803 ; posAround
+AP 1
+LDF 1357 ; dangeroushelper
+AP 2
+JOIN
+LD 0 0 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 0 1 ; pos
+LDF 1315 ; isGhost
+AP 2
+CAR
+SEL 1319 1321
+RTN
+LDC 1
+JOIN
+LD 0 0 ; ghosts
+LD 0 1 ; positions
+CDR
+LDF 1357 ; dangeroushelper
+AP 2
+JOIN
+LDC 0
+JOIN
+LD 0 0 ; ghosts
+LD 0 1 ; positions
+CAR
+LDF 1315 ; isGhost
+AP 2
+CAR
+SEL 1339 1341
+JOIN
+LD 0 1 ; positions
+ATOM
+SEL 1347 1349
+RTN
+LDC 1
+LD 0 0 ; branches
+CAR
+LDF 479 ; iGhostDirection
+AP 1
+CEQ
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; branches
+CDR
+LDF 1386 ; anyTowardsMe
+AP 1
+JOIN
+LDC 0
+JOIN
+LD 0 0 ; branches
+CAR
+LDF 472 ; iGhostDistance
+AP 1
+SEL 1361 1368
+SEL 1370 1372
+JOIN
+LD 0 0 ; branches
+ATOM
+SEL 1377 1379
+RTN
+LD 0 0 ; world
+LD 0 1 ; options
+CDR
+LDF 1414 ; noghosts
+AP 2
+JOIN
+LD 0 1 ; options
+CAR
+LD 0 0 ; world
+LD 0 1 ; options
+CDR
+LDF 1414 ; noghosts
+AP 2
+CONS
+JOIN
+LD 0 1 ; options
+JOIN
+LD 0 0 ; world
+LD 0 1 ; options
+CAR
+LDF 1330 ; isDangerous
+AP 2
+SEL 1390 1396
+JOIN
+LD 0 1 ; options
+ATOM
+SEL 1405 1407
+RTN
+LD 0 1 ; options
+JOIN
+LDF 279 ; DEPTH
+AP 0
+LD 0 0 ; world
+LD 0 0 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 411 ; lmLocation
+AP 1
+LD 0 1 ; options
+CAR
+LDF 1467 ; makebranch
+AP 4
+LD 0 0 ; world
+LD 0 1 ; options
+CDR
+LDF 1439 ; explore
+AP 2
+CONS
+JOIN
+LD 0 1 ; options
+ATOM
+SEL 1418 1420
+RTN
+LD 0 0 ; inf
+LDF 1476 ; nothingspecial
+AP 1
+JOIN
+LDC 0
+JOIN
+LD 1 0 ; iterate
+LDC 1
+SUB
+LD 1 1 ; world
+LD 0 0 ; inf
+LDF 487 ; iEndpoint
+AP 1
+LDF 1513 ; moreinfos
+AP 3
+JOIN
+LD 0 0 ; inf
+LDC 0
+CONS
+JOIN
+LD 1 0 ; iterate
+SEL 1443 1447
+SEL 1449 1459
+RTN
+LD 0 1 ; world
+LD 0 2 ; base
+LD 0 3 ; pos
+LDF 1619 ; branchfinder
+AP 3
+DUM 1
+LDF 1463 ; _177
+RAP 1
+RTN
+LDC 0
+LD 0 0 ; info
+LDF 454 ; iDeadEnd
+AP 1
+LD 0 0 ; info
+LDF 457 ; iPill
+AP 1
+ADD
+LD 0 0 ; info
+LDF 461 ; iFruitDistance
+AP 1
+ADD
+LD 0 0 ; info
+LDF 466 ; iPowerDistance
+AP 1
+ADD
+LD 0 0 ; info
+LDF 472 ; iGhostDistance
+AP 1
+ADD
+CEQ
+RTN
+LD 1 2 ; endpoint
+LDF 562 ; eTicks
+AP 1
+LD 1 0 ; iterate
+LD 1 1 ; world
+LD 0 0 ; options
+LD 1 2 ; endpoint
+LDF 555 ; ePos
+AP 1
+LDF 1546 ; morehelper
+AP 4
+CDR
+LDF 1604 ; addoffset
+AP 2
+RTN
+LD 0 2 ; endpoint
+LDF 558 ; eFrom
+AP 1
+LD 0 1 ; world
+LD 0 2 ; endpoint
+LDF 555 ; ePos
+AP 1
+LDF 811 ; openfieldsat
+AP 2
+LDF 1237 ; exclude
+AP 2
+DUM 1
+LDF 1498 ; _178
+RAP 1
+RTN
+LDC 0
+JOIN
+LD 0 0 ; iterate
+LD 0 1 ; world
+LD 0 2 ; options
+CDR
+LD 0 3 ; base
+LDF 1546 ; morehelper
+AP 4
+LD 0 0 ; iterate
+LD 0 1 ; world
+LD 0 3 ; base
+LD 0 2 ; options
+CAR
+LDF 1467 ; makebranch
+AP 4
+CONS
+JOIN
+LD 0 2 ; options
+ATOM
+SEL 1528 1530
+RTN
+LD 0 0 ; info
+LDF 454 ; iDeadEnd
+AP 1
+LD 1 0 ; ticks
+LD 0 0 ; info
+LDF 457 ; iPill
+AP 1
+LDF 1614 ; addnonzero
+AP 2
+LD 1 0 ; ticks
+LD 0 0 ; info
+LDF 461 ; iFruitDistance
+AP 1
+LDF 1614 ; addnonzero
+AP 2
+LD 1 0 ; ticks
+LD 0 0 ; info
+LDF 466 ; iPowerDistance
+AP 1
+LDF 1614 ; addnonzero
+AP 2
+LD 1 0 ; ticks
+LD 0 0 ; info
+LDF 472 ; iGhostDistance
+AP 1
+LDF 1614 ; addnonzero
+AP 2
+LD 0 0 ; info
+LDF 479 ; iGhostDirection
+AP 1
+LD 0 0 ; info
+LDF 487 ; iEndpoint
+AP 1
+CONS
+CONS
+CONS
+CONS
+CONS
+CONS
+LD 1 0 ; ticks
+LD 1 1 ; infos
+CDR
+LDF 1604 ; addoffset
+AP 2
+CONS
+RTN
+LD 0 1 ; infos
+JOIN
+LD 0 1 ; infos
+CAR
+DUM 1
+LDF 1550 ; _181
+RAP 1
+JOIN
+LD 0 1 ; infos
+ATOM
+SEL 1596 1598
+RTN
+LDC 0
+JOIN
+LD 0 0 ; ticks
+LD 0 1 ; value
+ADD
+JOIN
+LD 0 1 ; value
+LDC 0
+CEQ
+SEL 1608 1610
+RTN
+LD 0 0 ; world
+LD 0 1 ; base
+LD 0 2 ; pos
+LDC 1
+LDC 0
+LDC 0
+LDC 0
+LDC 0
+LDC 0
+LDC 0
+LDC 0
+LDC 0
+CONS
+LDC 0
+LDC 0
+CONS
+LDC 0
+CONS
+CONS
+CONS
+CONS
+CONS
+CONS
+CONS
+CONS
+LDF 1722 ; branchhelper
+AP 5
+RTN
+LD 3 3 ; ticks
+LD 3 2 ; pos
+LD 3 1 ; base
+LD 0 0 ; ghost
+CDR
+LDF 598 ; ghostMovesToMe
+AP 3
+LD 1 0 ; newinfo
+LDF 545 ; setGhost
+AP 3
+JOIN
+LD 3 0 ; world
+LD 3 2 ; pos
+LD 3 0 ; world
+LD 3 2 ; pos
+LD 3 1 ; base
+LDF 1182 ; nextpos
+AP 3
+LD 3 3 ; ticks
+LD 2 0 ; field
+LDF 367 ; speed
+AP 1
+ADD
+LD 1 0 ; newinfo
+LDF 1722 ; branchhelper
+AP 5
+JOIN
+LD 0 0 ; ghost
+CAR
+SEL 1647 1658
+RTN
+LD 2 2 ; pos
+LD 2 1 ; base
+LD 2 3 ; ticks
+CONS
+CONS
+LD 0 0 ; newinfo
+LDF 519 ; setEndpoint
+AP 2
+JOIN
+LD 2 0 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 2 2 ; pos
+LDF 1315 ; isGhost
+AP 2
+DUM 1
+LDF 1674 ; _188
+RAP 1
+JOIN
+LD 0 0 ; newinfo
+JOIN
+LD 2 0 ; world
+LD 2 2 ; pos
+LDF 1124 ; isjunction
+AP 2
+SEL 1678 1687
+JOIN
+LD 2 2 ; pos
+LDC 0
+LDC 0
+CONS
+LDF 1249 ; samepos
+AP 2
+SEL 1697 1699
+RTN
+LD 0 0 ; field
+LD 1 3 ; ticks
+LD 1 4 ; info
+LDF 1813 ; setInfo
+AP 3
+DUM 1
+LDF 1705 ; _193
+RAP 1
+RTN
+LD 0 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 2 ; pos
+LDF 398 ; mapAtLoc
+AP 2
+DUM 1
+LDF 1713 ; _194
+RAP 1
+RTN
+LDC 1
+JOIN
+LD 0 0 ; field
+LDF 309 ; GHOST_START
+AP 0
+CEQ
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; field
+LDF 307 ; LAMBDA_START
+AP 0
+CEQ
+SEL 1732 1734
+JOIN
+LD 0 2 ; info
+JOIN
+LD 0 2 ; info
+LDC 403
+DBUG
+JOIN
+LDC 1
+LD 0 2 ; info
+LDF 495 ; setDeadEnd
+AP 2
+JOIN
+LD 0 0 ; field
+LDF 299 ; EMPTY
+AP 0
+CEQ
+SEL 1739 1741
+SEL 1747 1749
+JOIN
+LD 0 1 ; ticks
+LD 0 2 ; info
+LDF 461 ; iFruitDistance
+AP 1
+LDF 659 ; minnotzero
+AP 2
+LD 0 2 ; info
+LDF 507 ; setFruit
+AP 2
+JOIN
+LD 0 0 ; field
+LDF 297 ; WALL
+AP 0
+CEQ
+SEL 1753 1758
+JOIN
+LD 0 1 ; ticks
+LD 0 2 ; info
+LDF 466 ; iPowerDistance
+AP 1
+LDF 659 ; minnotzero
+AP 2
+LD 0 2 ; info
+LDF 513 ; setPower
+AP 2
+JOIN
+LD 0 0 ; field
+LDF 305 ; FRUIT
+AP 0
+CEQ
+SEL 1765 1775
+JOIN
+LD 0 1 ; ticks
+LD 0 2 ; info
+LDF 457 ; iPill
+AP 1
+LDF 659 ; minnotzero
+AP 2
+LD 0 2 ; info
+LDF 501 ; setPill
+AP 2
+JOIN
+LD 0 0 ; field
+LDF 303 ; POWER
+AP 0
+CEQ
+SEL 1781 1791
+JOIN
+LD 0 0 ; field
+LDF 301 ; PILL
+AP 0
+CEQ
+SEL 1797 1807
+RTN
+LDC 1
+JOIN
+LD 0 1 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 0 ; options
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 303 ; POWER
+AP 0
+CEQ
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; options
+CDR
+LD 0 1 ; world
+LDF 1868 ; canKill
+AP 2
+JOIN
+LD 0 1 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 408 ; lmVitality
+AP 1
+LDC 1
+CGT
+SEL 1819 1821
+SEL 1832 1834
+JOIN
+LD 0 0 ; options
+CDR
+LD 0 1 ; world
+LDF 1868 ; canKill
+AP 2
+JOIN
+LDC 0
+JOIN
+LD 0 1 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 0 0 ; options
+CAR
+LDF 1315 ; isGhost
+AP 2
+CAR
+SEL 1840 1850
+JOIN
+LD 0 0 ; options
+ATOM
+SEL 1856 1858
+RTN
+LDC 1
+JOIN
+LD 0 1 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 0 ; options
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 303 ; POWER
+AP 0
+CEQ
+JOIN
+LD 0 1 ; world
+LD 0 0 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 0 0 ; options
+CDR
+LD 0 1 ; world
+LDF 1927 ; killDirection
+AP 2
+JOIN
+LD 0 1 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 408 ; lmVitality
+AP 1
+LDC 1
+CGT
+SEL 1872 1874
+SEL 1885 1891
+JOIN
+LD 0 0 ; options
+CDR
+LD 0 1 ; world
+LDF 1927 ; killDirection
+AP 2
+JOIN
+LDC 0
+LDC 417
+DBUG
+JOIN
+LD 0 1 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 0 0 ; options
+CAR
+LDF 1315 ; isGhost
+AP 2
+CAR
+SEL 1897 1907
+JOIN
+LD 0 0 ; options
+ATOM
+SEL 1913 1917
+RTN
+LD 0 0 ; state
+LD 0 1 ; direction
+CONS
+RTN
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+LDC 0
+LDC 1
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+ADD
+CONS
+CONS
+LD 0 1 ; options
+LD 0 2 ; world
+LDF 1927 ; killDirection
+AP 2
+DUM 2
+LDF 1931 ; _225
+RAP 2
+RTN
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+LDC 0
+LDC 1
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+ADD
+CONS
+CONS
+RTN
+LDC 1
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+ADD
+LDC 4
+LDF 1256 ; modulo
+AP 2
+LDC 0
+LDC 1
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+ADD
+CONS
+CONS
+JOIN
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+LDC 1
+LD 0 0 ; state
+LDF 446 ; stTurns
+AP 1
+ADD
+LDC 1
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+ADD
+CONS
+CONS
+JOIN
+LD 0 0 ; state
+LDF 446 ; stTurns
+AP 1
+LDF 281 ; WRONG_TURNS
+AP 0
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+LDF 283 ; INCREASE
+AP 0
+DIV
+ADD
+CGT
+SEL 1966 1983
+JOIN
+LD 0 0 ; state
+LDF 443 ; stDirection
+AP 1
+LD 0 0 ; state
+LDF 446 ; stTurns
+AP 1
+LDC 1
+LD 0 0 ; state
+LDF 450 ; stTotalSteps
+AP 1
+ADD
+CONS
+CONS
+JOIN
+LD 0 1 ; options
+LDF 632 ; count
+AP 1
+LDC 2
+CGT
+SEL 1999 2014
+RTN
+LD 1 0 ; world
+LD 1 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 1 0 ; world
+LD 1 1 ; options
+CDR
+LD 1 2 ; branches
+CDR
+LDF 2068 ; canKillGhost
+AP 3
+JOIN
+LD 0 1 ; fright
+LD 0 0 ; branchset
+LDF 2100 ; anykill
+AP 2
+SEL 2035 2041
+RTN
+LDC 99
+JOIN
+LD 0 2 ; branches
+CAR
+LD 0 0 ; world
+LDF 376 ; wLambda
+AP 1
+LDF 408 ; lmVitality
+AP 1
+DUM 2
+LDF 2049 ; _232
+RAP 2
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2055 2057
+RTN
+LD 1 0 ; fright
+LDC 250
+CGT
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 1 0 ; fright
+LD 1 1 ; set
+CDR
+LDF 2100 ; anykill
+AP 2
+JOIN
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+SEL 2072 2076
+SEL 2078 2080
+RTN
+LDC 0
+JOIN
+LD 0 1 ; set
+CAR
+DUM 1
+LDF 2086 ; _239
+RAP 1
+JOIN
+LD 0 1 ; set
+ATOM
+SEL 2092 2094
+RTN
+LD 1 0 ; world
+LD 1 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 1 0 ; world
+LD 1 1 ; options
+CDR
+LD 1 2 ; branches
+CDR
+LDF 2132 ; canEatFruit
+AP 3
+JOIN
+LD 1 0 ; world
+LD 0 0 ; branchset
+LDF 2216 ; anyfruit
+AP 2
+SEL 2104 2110
+RTN
+LDC 99
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2118 ; _244
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2124 2126
+RTN
+LDC 14
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+MUL
+LD 0 0 ; branch
+LDF 461 ; iFruitDistance
+AP 1
+CGT
+JOIN
+LDC 0
+JOIN
+LDC 25
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+MUL
+LDC 53
+LD 0 0 ; branch
+LDF 461 ; iFruitDistance
+AP 1
+MUL
+CGT
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+LDC 1
+CEQ
+SEL 2148 2160
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+LDC 0
+CEQ
+SEL 2136 2146
+SEL 2162 2164
+JOIN
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+LDC 0
+CEQ
+SEL 2171 2173
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 1 0 ; world
+LD 1 1 ; set
+CDR
+LDF 2216 ; anyfruit
+AP 2
+JOIN
+LD 1 0 ; world
+LDF 385 ; wFruit
+AP 1
+LD 0 0 ; branch
+LDF 461 ; iFruitDistance
+AP 1
+CGT
+SEL 2181 2188
+SEL 2190 2192
+RTN
+LDC 0
+JOIN
+LD 0 1 ; set
+CAR
+DUM 1
+LDF 2198 ; _259
+RAP 1
+JOIN
+LD 0 1 ; set
+ATOM
+SEL 2208 2210
+RTN
+LD 1 0 ; world
+LD 1 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 1 0 ; world
+LD 1 1 ; options
+CDR
+LD 1 2 ; branches
+CDR
+LDF 2247 ; canEatPowerPill
+AP 3
+JOIN
+LD 0 0 ; branchset
+LDF 2326 ; anypower
+AP 1
+SEL 2220 2226
+RTN
+LDC 99
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2234 ; _264
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2239 2241
+RTN
+LDC 10
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+MUL
+LD 0 0 ; branch
+LDF 466 ; iPowerDistance
+AP 1
+CGT
+JOIN
+LDC 0
+JOIN
+LDC 5
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+MUL
+LDC 11
+LD 0 0 ; branch
+LDF 466 ; iPowerDistance
+AP 1
+MUL
+CGT
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+LDC 1
+CEQ
+SEL 2263 2275
+JOIN
+LDC 1
+JOIN
+LD 0 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+LDC 0
+CEQ
+SEL 2251 2261
+SEL 2277 2279
+JOIN
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+LDC 0
+CEQ
+SEL 2286 2288
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 1 0 ; set
+CDR
+LDF 2326 ; anypower
+AP 1
+JOIN
+LD 0 0 ; branch
+LDF 466 ; iPowerDistance
+AP 1
+SEL 2296 2303
+SEL 2305 2307
+RTN
+LDC 0
+JOIN
+LD 0 0 ; set
+CAR
+DUM 1
+LDF 2312 ; _279
+RAP 1
+JOIN
+LD 0 0 ; set
+ATOM
+SEL 2318 2320
+RTN
+LD 0 0 ; world
+LD 0 1 ; options
+LD 0 2 ; branches
+LDC 99
+LDC 99999
+LDF 2381 ; caneathelper
+AP 5
+RTN
+LD 2 0 ; world
+LD 2 1 ; options
+CDR
+LD 2 2 ; branches
+CDR
+LD 2 0 ; world
+LD 2 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+LD 0 0 ; result
+LDF 2381 ; caneathelper
+AP 5
+JOIN
+LD 2 0 ; world
+LD 2 1 ; options
+CDR
+LD 2 2 ; branches
+CDR
+LD 2 3 ; dir
+LD 2 4 ; near
+LDF 2381 ; caneathelper
+AP 5
+JOIN
+LD 0 0 ; result
+SEL 2338 2352
+RTN
+LD 1 4 ; near
+LD 0 0 ; branchset
+LDF 2458 ; anyeat
+AP 2
+DUM 1
+LDF 2362 ; _284
+RAP 1
+RTN
+LD 0 3 ; dir
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2365 ; _285
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2373 2375
+RTN
+LDC 1
+JOIN
+LD 0 0 ; incoming
+LDC 0
+CEQ
+JOIN
+LDC 1
+JOIN
+LD 1 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+LDC 0
+CEQ
+JOIN
+LD 1 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+LDC 0
+CEQ
+SEL 2391 2393
+JOIN
+LDC 0
+JOIN
+LD 1 0 ; branch
+LDF 454 ; iDeadEnd
+AP 1
+LDC 0
+CEQ
+SEL 2385 2387
+SEL 2399 2406
+JOIN
+LDC 0
+JOIN
+LD 2 0 ; near
+LD 1 0 ; branch
+LDF 457 ; iPill
+AP 1
+CGT
+SEL 2408 2416
+JOIN
+LDC 0
+JOIN
+LD 1 0 ; branch
+LDF 457 ; iPill
+AP 1
+JOIN
+LD 2 0 ; near
+LD 2 1 ; set
+CDR
+LDF 2458 ; anyeat
+AP 2
+JOIN
+LD 1 0 ; branch
+LDF 457 ; iPill
+AP 1
+SEL 2418 2425
+SEL 2427 2431
+RTN
+LD 1 1 ; set
+LDF 1386 ; anyTowardsMe
+AP 1
+DUM 1
+LDF 2437 ; _300
+RAP 1
+RTN
+LDC 0
+JOIN
+LD 0 1 ; set
+CAR
+DUM 1
+LDF 2443 ; _301
+RAP 1
+JOIN
+LD 0 1 ; set
+ATOM
+SEL 2450 2452
+RTN
+LD 1 0 ; world
+LD 1 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 1 0 ; world
+LD 1 1 ; options
+CDR
+LD 1 2 ; branches
+CDR
+LDF 2489 ; canWalkSave
+AP 3
+JOIN
+LD 0 0 ; branchset
+LDF 2533 ; anysave
+AP 1
+SEL 2462 2468
+RTN
+LDC 99
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2476 ; _306
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2481 2483
+RTN
+LDC 1
+JOIN
+LDC 0
+LD 0 0 ; branch
+LDF 479 ; iGhostDirection
+AP 1
+CEQ
+JOIN
+LDC 0
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+CEQ
+SEL 2493 2495
+JOIN
+LDC 0
+JOIN
+LDC 1
+JOIN
+LD 1 0 ; branchset
+CDR
+LDF 2533 ; anysave
+AP 1
+JOIN
+LDC 0
+LD 0 0 ; branch
+LDF 454 ; iDeadEnd
+AP 1
+CEQ
+SEL 2501 2508
+SEL 2510 2512
+RTN
+LDC 0
+JOIN
+LD 0 0 ; branchset
+CAR
+DUM 1
+LDF 2517 ; _315
+RAP 1
+JOIN
+LD 0 0 ; branchset
+ATOM
+SEL 2525 2527
+RTN
+LD 1 0 ; world
+LD 1 1 ; options
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 1 0 ; world
+LD 1 1 ; options
+CDR
+LD 1 2 ; branches
+CDR
+LDF 2564 ; canEatAtLeast
+AP 3
+JOIN
+LD 0 0 ; branchset
+LDF 2588 ; anyatleast
+AP 1
+SEL 2537 2543
+RTN
+LDC 99
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2551 ; _320
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2556 2558
+RTN
+LDC 1
+JOIN
+LD 1 0 ; set
+CDR
+LDF 2588 ; anyatleast
+AP 1
+JOIN
+LD 0 0 ; branch
+LDF 457 ; iPill
+AP 1
+SEL 2568 2570
+RTN
+LDC 0
+JOIN
+LD 0 0 ; set
+CAR
+DUM 1
+LDF 2575 ; _325
+RAP 1
+JOIN
+LD 0 0 ; set
+ATOM
+SEL 2580 2582
+RTN
+LD 0 0 ; world
+LD 0 0 ; world
+LD 0 1 ; options
+LD 0 2 ; branches
+LD 0 1 ; options
+CAR
+LDC 0
+LDF 2644 ; longHelper
+AP 5
+LDF 720 ; getDirection
+AP 2
+RTN
+LD 2 0 ; world
+LD 2 1 ; options
+CDR
+LD 2 2 ; branches
+CDR
+LD 2 1 ; options
+CAR
+LD 0 0 ; result
+LDF 2644 ; longHelper
+AP 5
+JOIN
+LD 2 0 ; world
+LD 2 1 ; options
+CDR
+LD 2 2 ; branches
+CDR
+LD 2 3 ; bestoption
+LD 2 4 ; distance
+LDF 2644 ; longHelper
+AP 5
+JOIN
+LD 0 0 ; result
+SEL 2604 2615
+RTN
+LD 1 4 ; distance
+LD 0 0 ; branchset
+LDF 2673 ; anylong
+AP 2
+DUM 1
+LDF 2625 ; _330
+RAP 1
+RTN
+LD 0 3 ; bestoption
+JOIN
+LD 0 2 ; branches
+CAR
+DUM 1
+LDF 2628 ; _331
+RAP 1
+JOIN
+LD 0 2 ; branches
+ATOM
+SEL 2636 2638
+RTN
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+JOIN
+LD 1 0 ; distance
+LD 1 1 ; set
+CDR
+LDF 2673 ; anylong
+AP 2
+JOIN
+LD 0 0 ; branch
+LDF 472 ; iGhostDistance
+AP 1
+LD 1 0 ; distance
+CGT
+SEL 2648 2652
+RTN
+LDC 0
+JOIN
+LD 0 1 ; set
+CAR
+DUM 1
+LDF 2658 ; _336
+RAP 1
+JOIN
+LD 0 1 ; set
+ATOM
+SEL 2665 2667
+RTN
+LDC 99
+JOIN
+LD 0 0 ; world
+LD 0 1 ; choices
+CDR
+LDF 2696 ; powerpill
+AP 2
+JOIN
+LD 0 0 ; world
+LD 0 1 ; choices
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 0 1 ; choices
+CDR
+ATOM
+SEL 2677 2679
+JOIN
+LD 0 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 1 ; choices
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 303 ; POWER
+AP 0
+CEQ
+SEL 2685 2691
+RTN
+LD 0 0 ; world
+LDF 380 ; wGhosts
+AP 1
+LD 0 1 ; choices
+CAR
+LDF 1315 ; isGhost
+AP 2
+CAR
+LDC 0
+CEQ
+JOIN
+LDC 0
+JOIN
+LDC 99
+JOIN
+LD 0 0 ; world
+LD 0 1 ; choices
+CDR
+LDF 2740 ; pillnoghost
+AP 2
+JOIN
+LD 0 0 ; world
+LD 0 1 ; choices
+CAR
+LDF 720 ; getDirection
+AP 2
+JOIN
+LD 0 1 ; choices
+CDR
+ATOM
+SEL 2721 2723
+JOIN
+LD 0 0 ; world
+LDF 373 ; wMap
+AP 1
+LD 0 1 ; choices
+CAR
+LDF 398 ; mapAtLoc
+AP 2
+LDF 301 ; PILL
+AP 0
+CEQ
+SEL 2708 2719
+SEL 2729 2735
+RTN
