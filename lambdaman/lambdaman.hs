@@ -58,16 +58,44 @@ fields world =
 	in ((field ghosts map x (y - 1) 0) : (field ghosts map (x + 1) y 1) : (field ghosts map x (y + 1) 2) : (field ghosts map (x - 1) y 3) : 0);
 
 field ghosts map x y dir =
-	(item x (item y map)) : (isghost ghosts x y) : dir;
+	(item x (item y map)) : (isghost map ghosts x y) : dir;
 
-isghost ghosts x y =
+isghost map ghosts x y =
 	if (atom ghosts)
 		then 0
 		else let ghostx = (car (item 1 (car ghosts)));
 			 ghosty = (cdr (item 1 (car ghosts)))
 		     in if (and (ghostx == x) (ghosty == y))
 				then 1
-				else isghost (cdr ghosts) x y;
+				else if ghostface map (item 2 (car ghosts)) x y ghostx ghosty 
+					then 1
+					else isghost map (cdr ghosts) x y;
+
+ghostface map front x y ghostx ghosty =
+	let face = ghostnext front ghostx ghosty
+	in if (item (car face) (item (cdr face) map)) == 0
+		then nextto x y ghostx ghosty
+		else and ((car face) == x) ((cdr face) == y);
+			
+nextto x y xx yy =
+	if and (x == xx) ((y + 1) == yy)
+		then 1
+		else if and (x == xx) ((y - 1) == yy)
+			then 1
+			else if and (y == yy) ((x + 1) == xx)
+				then 1
+				else if and (y == yy) ((x - 1) == xx)
+					then 1
+					else 0;
+
+ghostnext front x y =
+	if front == 0
+		then x:(y - 1)
+		else if front == 1
+			then (x + 1):y
+			else if front == 2
+				then x:(y + 1)
+				else (x - 1):y;
 
 and first second =
 	if first
@@ -109,7 +137,6 @@ fruitorlast choices fruit =
 			then 99
 			else fruitorlast (cdr choices) fruit;
 
--- todo check for fright and reverse no ghost
 eatghosts choices ghosts state fright =
 	if fright == 0
 		then 99
