@@ -145,7 +145,7 @@ choose results state =
 	let dir = (car (cdr state));
 	    count = (cdr (cdr state));
             res = helpchoose results 0
-	in if count > 7
+	in if count > 6
 		then ((car state):((modulo (dir + 1) 3):0)):(car res)
 		else if (cdr res) > 3
 			then ((car state):(dir:(count + 1))):(car res)
