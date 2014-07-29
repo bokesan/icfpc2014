@@ -23,7 +23,7 @@ step state world =
 	else
 		let ghostfreeoptions = noghosts world options in
 		let branches = explore world ghostfreeoptions in	
-		stepAndState state world options branches;
+		stepAndState state world ghostfreeoptions branches;
 
 
 -- return state and step direction based on branches
@@ -32,31 +32,33 @@ stepAndState state world options branches =
 		getState state : 0	-- ghosts on all sides. no powerpills, no fright. we die.
 	else let killDir = canKillGhost world options branches in
 		-- we can probably kill a ghost
-	if 99 > killDir then
+	if 0 > killDir then
 		getState state : debug killDir 001
 	else let fruitDir = canEatFruit world options branches in
 		-- we can probably eat the fruit, that is: we reach it in time and faster than ghosts
-	if 99 > fruitDir then
+	if 0 > fruitDir then
 		getState state : debug fruitDir 002
 	else let powerDir = canEatPowerPill world options branches in
 		-- we can probably eat a power pill, that is: faster than ghosts
-	if 99 > powerDir then
+	if 0 > powerDir then
 		getState state : debug powerDir 003
 	else let eatSaveDir = canEatSave world options branches in
 		-- save means no ghost and also no ghost towards me on other branches when i choose dead end
 	if 99 > eatSaveDir then
 		getState state : debug eatSaveDir 004
-	else let walkSaveDir = canWalkSave state world options branches in
+	else let walkSaveDir = canWalkSave world options branches in
 		-- save means no ghost also no dead end
 	if 99 > walkSaveDir then
 		getModifiedState state options : debug walkSaveDir 005 -- this is considered lame, no eat, no kill
 	else let eatUnsaveDir = canEatAtLeast world options branches in
 		-- we will probably die, so eat at least some points
-	if 99 > eatUnsaveDir then
+	if 0 > eatUnsaveDir then
 		getState state : debug eatUnsaveDir 006
 	else let dieHarderDir = liveLong world options branches in
 		-- walk the way where the ghost is far away
-		getState state : debug dieHarderDir 007;
+	if 0 > dieHarderDir then
+		getState state : debug dieHarderDir 007
+	else dbug (getState state : 0) 408;	-- FAILURE CANNOT HAPPEN
 
 ----- CONFIGURATION SECTION
 
@@ -334,6 +336,15 @@ isGhost ghosts pos =
 		else
 		 	isGhost (cdr ghosts) pos;
 
+--any ghosts around the field?
+isDangerous world pos =
+	dangeroushelper (wGhosts world) (posAround pos);
+
+dangeroushelper ghosts positions =
+	if atom positions then 0
+	else if car (isGhost ghosts (car positions)) then 1
+	else dangeroushelper ghosts (cdr positions); 
+
 -- checks whether any ghost is coming to me
 anyTowardsMe branches =
 	if atom branches then
@@ -541,16 +552,19 @@ caneathelper world options branches dir near =
 		 branch = car branches in
 	if iPill branch && near > iPill branch &&
 		(iDeadEnd branch == 0 || incoming == 0) &&
-		(iGhostDistance branch == 0 || iGhostDirection branch == 0) then
+		(iGhostDistance branch == 0 || iGhostDirection branch == 0) &&
+		0 == isDangerous world (car options) then
 			caneathelper world (cdr options) (cdr branches) (getDirection world (car options)) (iPill branch)
 	else caneathelper world (cdr options) (cdr branches) dir near;
 		
 -- save means no ghost also no dead end
-canWalkSave state world options branches =
+canWalkSave world options branches =
 	if atom branches then 99
-	else if 0 == iDeadEnd (car branches) && (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches)) then
-		getDirection world (car options)
-	else canWalkSave state world (cdr options) (cdr branches);
+	else if 0 == iDeadEnd (car branches)
+		&& (0 == iGhostDistance (car branches) || 0 == iGhostDirection (car branches))
+		&& 0 == isDangerous world (car options) then
+			getDirection world (car options)
+	else canWalkSave world (cdr options) (cdr branches);
 		
 -- we will probably die, so eat at least some points
 canEatAtLeast world options branches =
