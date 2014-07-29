@@ -111,7 +111,7 @@ direction state ghosts nextfields front fright fruit =
 			: (pillnoghost choices ghosts state)
 			: (noghost choices ghosts state)
 			: (pillandghost choices ghosts state)
-			: (eatenalive))
+			: (eatenalive choices))
 	in choose results state;
 
 trans nextfields front state =
@@ -152,9 +152,9 @@ choose results state =
 			else ((car state):(dir:count)):(car res);
 
 helpchoose results deep =
-	if (car results) == 99
+	if (item 0 results) == 99
 		then helpchoose (cdr results) (deep + 1)
-		else (car results):deep;
+		else (item 0 results):deep;
 
 -- TODO check for last pill
 fruitorlast choices fruit =
@@ -201,7 +201,10 @@ pillandghost choices ghosts state =
 			then 99
 			else pillandghost (cdr choices) ghosts state;
 
-eatenalive = 0;
+eatenalive choices =
+	if ((item 0 (car choices)) == 0) == 0
+		then (item 2 (car choices))
+		else eatenalive (cdr choices);
 
 
 
