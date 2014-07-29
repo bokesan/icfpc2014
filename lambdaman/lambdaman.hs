@@ -229,7 +229,6 @@ choose results state =
 		else if (cdr res) > 5
 			then ((car state):(dir:(count + 1))):(car res)
 			else ((car state):(dir:count)):(car res);
--- TODO should this be dir:0 in the row above...?
 
 helpchoose results deep =
 	if (item 0 results) == 99
@@ -323,7 +322,6 @@ eatdistant world choices =
 					else eatdistant world (cdr choices)
 		else 99;
 
--- TODO make that no distant ghost
 noghost choices  =
 	if (((item 1 (car choices)) == 0) && (((item 0 (car choices)) == 0) == 0))
 		then (item 2 (car choices))
