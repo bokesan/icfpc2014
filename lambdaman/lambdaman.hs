@@ -1,9 +1,8 @@
--- main = init example step;
 main world undefine = init world step;
 
 init world step =
 	let ghosts = (item 2 world) in
-  	let state = ghostmoves ghosts
+  	let state = (ghostmoves ghosts) : (0:0)
   	in (state:step);
 
 item index tuple =
@@ -25,7 +24,7 @@ ghosthelper ghostcount result input =
 		else (ghosthelper (ghostcount + 1) ((speed ghostcount) : result) (cdr input));
 
 speed ghostcount = 
-	item (modulo ghostcount 3) speedtuple;
+	item (modulo ghostcount 4) speedtuple;
 
 speedtuple =
 	(130:132:134:136:0);
@@ -38,7 +37,7 @@ modulo number base =
 		
 step state world =
 	let new = state -- newstate state (item 2 world) (item 0 (item 1 world)) 0 tick
-	in (new : (directionhelp new world));
+	in (directionhelp new world);
 
 -- TODO berechnen, wann die geister den nächsten move machen
 -- newstate state ghosts fright ghostnr tick =
@@ -105,7 +104,7 @@ and first second =
 		else 0;
 
 direction state ghosts nextfields front fright fruit =
-	let choices = trans nextfields front in
+	let choices = trans nextfields front state in
 	let results = (	  (fruitorlast choices fruit)
 			: (eatghosts choices ghosts state fright)
 			: (powerpill choices)
@@ -113,21 +112,49 @@ direction state ghosts nextfields front fright fruit =
 			: (noghost choices ghosts state)
 			: (pillandghost choices ghosts state)
 			: (eatenalive))
-	in choose results;
+	in choose results state;
 
-trans nextfields front =
-	if front == 0
-		then ((item 3 nextfields) : (item 0 nextfields) : (item 1 nextfields) : (item 2 nextfields) : 0)
-		else if front == 1
-			then nextfields
-			else if front == 2
-				then ((item 1 nextfields) : (item 2 nextfields) : (item 3 nextfields) : (item 0 nextfields) : 0)
-				else ((item 2 nextfields) : (item 3 nextfields) : (item 0 nextfields) : (item 1 nextfields) : 0);
+trans nextfields front state =
+	let first = (car (cdr state))
+	in if first == 0
+		then if front == 0
+			then ((item 3 nextfields) : (item 0 nextfields) : (item 1 nextfields) : (item 2 nextfields) : 0)
+			else if front == 1
+				then nextfields
+				else if front == 2
+					then ((item 1 nextfields) : (item 2 nextfields) : (item 3 nextfields) : (item 0 nextfields) : 0)
+					else ((item 2 nextfields) : (item 3 nextfields) : (item 0 nextfields) : (item 1 nextfields) : 0)
+		else if first == 1
+			then if front == 0
+				then ((item 0 nextfields) : (item 3 nextfields) : (item 1 nextfields) : (item 2 nextfields) : 0)
+				else if front == 1
+					then ((item 1 nextfields) : (item 0 nextfields) : (item 2 nextfields) : (item 3 nextfields) : 0)
+					else if front == 2
+						then ((item 2 nextfields) : (item 1 nextfields) : (item 3 nextfields) : (item 0 nextfields) : 0)
+						else ((item 3 nextfields) : (item 2 nextfields) : (item 0 nextfields) : (item 1 nextfields) : 0)
+			else if front == 0
+				then ((item 1 nextfields) : (item 3 nextfields) : (item 0 nextfields) : (item 2 nextfields) : 0)
+				else if front == 1
+					then ((item 2 nextfields) : (item 0 nextfields) : (item 1 nextfields) : (item 3 nextfields) : 0)
+					else if front == 2
+						then ((item 3 nextfields) : (item 1 nextfields) : (item 2 nextfields) : (item 0 nextfields) : 0)
+						else ((item 0 nextfields) : (item 2 nextfields) : (item 3 nextfields) : (item 1 nextfields) : 0);
 
-choose results =
+-- TODO
+choose results state =
+	let dir = (car (cdr state));
+	    count = (cdr (cdr state));
+            res = helpchoose results 0
+	in if count > 7
+		then ((car state):((modulo (dir + 1) 3):0)):(car res)
+		else if (cdr res) > 3
+			then ((car state):(dir:(count + 1))):(car res)
+			else ((car state):(dir:count)):(car res);
+
+helpchoose results deep =
 	if (car results) == 99
-		then (choose (cdr results))
-		else (car results);
+		then helpchoose (cdr results) (deep + 1)
+		else (car results):deep;
 
 -- TODO check for last pill
 fruitorlast choices fruit =
@@ -175,18 +202,6 @@ pillandghost choices ghosts state =
 			else pillandghost (cdr choices) ghosts state;
 
 eatenalive = 0;
-
-
-example = (examplemap:examplestatus:exampleghosts:0:0);
-examplemap = [[ 0, 0, 0 ], [ 0, 2, 2 ], [0, 0, 0]];
-examplestatus = (0:(1:1):1:3:0:0);
-exampleghosts = (ghost1:ghost2);
-ghost1 = (0:(2:1):3:0);
-ghost2 = ghost1;
-
-
-
-
 
 
 
