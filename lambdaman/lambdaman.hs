@@ -1,9 +1,7 @@
 -- TODO avoid being eaten while eating when ghosts follow, maybe choose empty fields to gain distance
 -- TODO maybe wait (back and forth) next to power pills till ghosts are near
 -- TODO better tracking of distances (in steps) to do better ghost reach estimation for powers etc
--- TODO use state for default direction determination
 -- TODO dont merge branches, return both!
--- TODO check for immediate danger
 
 ----- MAIN INFRASTRUCTURE SECTION
 
@@ -32,11 +30,11 @@ stepAndState state world options branches =
 		getState state : 0	-- ghosts on all sides. no powerpills, no fright. we die.
 	else let killDir = canKillGhost world options branches in
 		-- we can probably kill a ghost
-	if 0 > killDir then
+	if 99 > killDir then
 		getState state : debug killDir 001
 	else let fruitDir = canEatFruit world options branches in
 		-- we can probably eat the fruit, that is: we reach it in time and faster than ghosts
-	if 0 > fruitDir then
+	if 99 > fruitDir then
 		getState state : debug fruitDir 002
 	else let powerDir = canEatPowerPill world options branches in
 		-- we can probably eat a power pill, that is: faster than ghosts
@@ -63,7 +61,7 @@ stepAndState state world options branches =
 ----- CONFIGURATION SECTION
 
 -- config: 
-DEPTH = 0;		-- depth - max depth of recursive way checks, 0 is only until next junction
+DEPTH = 1;		-- depth - max depth of recursive way checks, 0 is only until next junction
 WRONG_TURNS = 2;	-- number of useless turns before we change default direction
 INCREASE = 200;		-- number of steps after which we increase allowed wrong turns, longer loops are less likely
 DEBUG = 0;		-- 0: no debug but FAILURE, 1: trace choices
