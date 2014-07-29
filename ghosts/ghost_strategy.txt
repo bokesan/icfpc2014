@@ -1,0 +1,50 @@
+Ideen
+=====
+
+In verschiedenen Abschnitten unterschiedlich verhalten:
+
+- dazu Aufrufe mitzählen
+- In der ersten Phase nur auf gute Positionen
+
+WICHTIG: mit unnützen Instuktionen auffüllen, um analysierende Lambdas
+zu ärgern.
+
+Verschiedene Geister
+--------------------
+
+- Bestimmte Gegend patrouillieren, z.B. um die Frucht
+  (insbesondere um die Zeit des zweiten Auftauchens)
+- Gegend abschirmen, z.B. Frucht oder Power Pills
+
+Aufgaben
+--------
+
+- Lambda jagen
+- Power Pills vermeiden, wenn lambda in der Nähe
+- Karte erkunden (wie?)
+
+### Location von Power Pills merken (aber nur 20 oder so)
+
+- wenn Geist auf einer Power pill ist, location merken
+- wenn nicht Frightened, und lambda näher an bekannter power pill als
+   ich, dann fliehen! (flight dist dabei berücksichtigen)
+
+Programmiertechniken
+--------------------
+
+Case jump: Tabelle mit Code-Addressen im daten-Speichen, und dann
+
+    add h,table_offset
+    mov pc,[h]
+
+Funktionen:
+
+    dec sp
+    mov [sp],pc
+    jeq function,0,0
+
+    mov g,[sp]
+    inc sp
+    add g,2
+    mov pc,g
+

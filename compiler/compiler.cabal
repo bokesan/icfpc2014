@@ -1,0 +1,16 @@
+name:               icfp2014
+version:            0.1.0.0
+build-type:         Simple
+cabal-version:      >=1.8
+
+executable gcc
+  hs-source-dirs:   gcc
+  main-is:          Main.hs
+  ghc-options:      -Wall
+  build-depends:    base, parsec
+
+executable ghasm
+  hs-source-dirs:   ghasm
+  main-is:          Main.hs
+  ghc-options:      -Wall
+  build-depends:    base, parsec

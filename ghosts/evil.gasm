@@ -1,0 +1,103 @@
+main {
+  call lowerGhostOnLoc;
+  if a /= 0 then halt fi;
+  sys index;
+  sys status;
+  add b 2;
+  and b 3;
+  [0] := b;  # [0] = opposite of current direction
+  g := 0;
+  if a /= 0 then
+    g := 2
+  fi;
+  call kill;
+  halt
+}
+
+lowerGhostOnLoc {
+    sys index;
+    c := a;
+    sys curpos;
+    d := a;
+    e := b;
+    f := 0;
+    if c /= 0 then
+      do
+        dec c;
+        a := c;
+        sys curpos;
+        f := 1; # true
+        if a /= d then f := 0 fi;
+        if b /= e then f := 0 fi;
+        if f /= 0 then c := 0 fi
+      while c > 0
+    fi;
+    a := f
+}
+
+flipdir {
+        # g should be 0 to keep dir, or 2 to flip:
+        # 0 -> 2
+        # 1 -> 3
+        # 2 -> 0
+        # 3 -> 1
+        add a g;
+        and a 3
+}
+
+movelarger {
+       e := c;
+       if d /= [0] then
+         e := d
+       fi;
+       if a >= b then
+             if a /= b then
+                 e := c
+             # fi;
+             # sys index;
+             # and a 1;
+             # if a /= 0 then
+             #     e := c
+             fi
+       fi;
+       a := e; call flipdir; sys move;
+       halt
+}
+
+
+kill {
+        sys index;
+        sys curpos;
+        c := a;
+        d := b;
+        sys lambda1;
+        e := a;
+        f := b;
+        if e <= c then
+                # lambda to the left
+                sub c e;  # c = delta X
+                if f <= d then
+                        # upper left
+                        sub d f;   # d = delta Y
+                        a := d; b := c; c := 0; d := 3;
+                        call movelarger
+                fi;
+                # lower left
+                sub f d; # f = delta Y
+                a := f; b := c; c := 2; d := 3;
+                call movelarger
+        fi;
+        # lambda is to the right
+        sub e c;   # e = delta X
+        if f <= d then
+                # upper right
+                sub d f; # d = delta y
+                a := d; b := e; c := 0; d := 1;
+                call movelarger
+        fi;
+        # lower right
+        sub f d; # f = delta Y
+        a := f; b := e; c := 2; d := 1;
+        call movelarger
+}
+
