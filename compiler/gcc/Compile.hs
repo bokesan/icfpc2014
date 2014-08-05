@@ -91,6 +91,11 @@ cExpr _   (CFun f)      = case lookup f cBUILTIN_OPS of
                             Nothing -> fail ("unknown instruction: " ++ f)
 cExpr _   (CNum n)      = return [I_LDC (read n)]
 
+cExpr env (CPair e1 e2) = cApp env [CFun "cons", e1, e2]
+
+cExpr env (CTuple [e1,e2]) = cExpr env (CPair e1 e2)
+cExpr env (CTuple (e:es))  = cExpr env (CPair e (CTuple es))
+
 cExpr env e@(EApp _ _)  = cApp env (gApp e)
 cExpr env (EIf e c a)   = do ce <- cExpr env e
                              cc <- cExpr env c

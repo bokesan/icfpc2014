@@ -19,7 +19,7 @@ pTopLevel = do whiteSpace
 
 pDefn :: Parser Defn
 pDefn =  do { (x:xs) <- many1 identifier
-            ; symbol "="
+            ; _ <- symbol "="
             ; e <- pExpr
             ; return (x, mkLambda xs e)
             }
@@ -44,9 +44,9 @@ pExpr =  do { reserved "if"
             ; return (ELet ds e)
             }
          <|>
-         do { symbol "\\"
+         do { _ <- symbol "\\"
             ; ns <- many1 identifier
-            ; symbol "->"
+            ; _ <- symbol "->"
             ; e <- pExpr
             ; return (mkLambda ns e)
             }
@@ -57,6 +57,7 @@ pExpr0   :: Parser Expr
 pExpr0    = buildExpressionParser table pApp
         <?> "expr0"
 
+table :: [[Operator Char () Expr]]
 table   = [[op "*" "*" AssocLeft, op "/" "/" AssocLeft]
           ,[op "+" "+" AssocLeft, op "-" "-" AssocLeft]
           ,[op ":" "cons" AssocRight]
@@ -66,7 +67,7 @@ table   = [[op "*" "*" AssocLeft, op "/" "/" AssocLeft]
           ]          
         where
           op s f assoc
-             = Infix (do{ symbol s; return (\a b -> mkApp [CFun f,a,b]) }) assoc
+             = Infix (do{ _ <- symbol s; return (\a b -> mkApp [CFun f,a,b]) }) assoc
 
 pApp :: Parser Expr
 pApp =  do { es <- many1 aExpr; return (mkApp es) }
@@ -79,32 +80,46 @@ lexer  = P.makeTokenParser haskellDef
          
 -- For efficiency, we will bind all the used lexical parsers at toplevel.
 
+whiteSpace :: Parser ()
+reserved, symbol   :: String -> Parser ()
+identifier :: Parser String
+comma, semi :: Parser ()
+brackets :: Parser a -> Parser a
+natural :: Parser Integer
+
 whiteSpace= P.whiteSpace lexer
-lexeme    = P.lexeme lexer
-symbol    = P.symbol lexer
+symbol    = discard . P.symbol lexer
 natural   = P.natural lexer
-parens    = P.parens lexer
 brackets  = P.brackets lexer
-semi      = P.semi lexer
-comma     = P.comma lexer
+semi      = discard $ P.semi lexer
+comma     = discard $ P.comma lexer
 identifier= P.identifier lexer
 reserved  = P.reserved lexer
-reservedOp= P.reservedOp lexer
+
+discard :: Parser a -> Parser ()
+discard p = p >> return ()
+
 
 aExpr  :: Parser Expr
-aExpr  =    parens pExpr
+aExpr  =    pOrTuple
         <|> do { es <- brackets (sepBy pExpr comma); return (mkList es) }
         <|> do { n <- natural; return (CNum (show n)) }
         <|> do { x <- identifier; return (EVar x) }
         <?> "aexpr"
 
+pOrTuple :: Parser Expr
+pOrTuple =  do _  <- symbol "("
+               es <- pExpr `sepBy` comma
+               _  <- symbol ")"
+               case es of
+                 []  -> fail "unit () not supported"
+                 [e] -> return e
+                 xs  -> return $ CTuple xs
+
 
 mkList :: [Expr] -> Expr
 mkList [] = CNil
-mkList (x:xs) = mkApp2 (CFun "cons") x (mkList xs)
-
-mkApp2 :: Expr -> Expr -> Expr -> Expr
-mkApp2 f a b = EApp (EApp f a) b
+mkList (x:xs) = CPair x (mkList xs)
 
 mkLambda :: [String] -> Expr -> Expr
 mkLambda [] e = e

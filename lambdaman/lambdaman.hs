@@ -9,8 +9,8 @@ main world enemy = init world step;
 
 -- init so far is just setting initial state
 init world step =
-  	let state = 1:0:0 in
-  	(state:step);
+  	let state = (1,0,0) in
+  	(state,step);
 
 -- the step function making direction decisions
 step state world =
@@ -26,42 +26,42 @@ step state world =
 -- return state and step direction based on branches
 stepAndState state world options branches =
 	if atom options then
-		getState state : 0	-- ghosts on all sides. no powerpills, no fright. we die.
+		(getState state, 0)	-- ghosts on all sides. no powerpills, no fright. we die.
 	else let killDir = canKillGhost world options branches in
 		-- we can probably kill a ghost
 	if 99 > killDir then
-		getState state : debug killDir 001
+		(getState state, debug killDir 001)
 
 	else let powerpill = powerpill world options in
-	if 99 > powerpill then getState state : powerpill
+	if 99 > powerpill then (getState state, powerpill)
 	else let pillnoghost = pillnoghost world options in
-	if 99 > pillnoghost then getState state : pillnoghost
+	if 99 > pillnoghost then (getState state, pillnoghost)
 
 	else let fruitDir = canEatFruit world options branches in
 		-- we can probably eat the fruit, that is: we reach it in time and faster than ghosts
 	if 99 > fruitDir then
-		getState state : debug fruitDir 002
+		(getState state, debug fruitDir 002)
 	else let powerDir = canEatPowerPill world options branches in
 		-- we can probably eat a power pill, that is: faster than ghosts
 	if 99 > powerDir then
-		getState state : debug powerDir 003
+		(getState state, debug powerDir 003)
 	else let eatSaveDir = canEatSave world options branches in
 		-- save means no ghost and also no ghost towards me on other branches when i choose dead end
 	if 99 > eatSaveDir then
-		getState state : debug eatSaveDir 004
+		(getState state, debug eatSaveDir 004)
 	else let walkSaveDir = canWalkSave world options branches in
 		-- save means no ghost also no dead end
 	if 99 > walkSaveDir then
-		getModifiedState state options : debug walkSaveDir 005 -- this is considered lame, no eat, no kill
+		(getModifiedState state options, debug walkSaveDir 005) -- this is considered lame, no eat, no kill
 	else let eatUnsaveDir = canEatAtLeast world options branches in
 		-- we will probably die, so eat at least some points
 	if 99 > eatUnsaveDir then
-		getState state : debug eatUnsaveDir 006
+		(getState state, debug eatUnsaveDir 006)
 	else let dieHarderDir = liveLong world options branches in
 		-- walk the way where the ghost is far away
 	if 99 > dieHarderDir then
-		getState state : debug dieHarderDir 007
-	else dbug (getState state : 0) 408;	-- FAILURE CANNOT HAPPEN
+		(getState state, debug dieHarderDir 007)
+	else dbug (getState state, 0) 408;	-- FAILURE CANNOT HAPPEN
 
 
 
@@ -247,7 +247,7 @@ posAroundMe world =
 posAround pos =
 	let x = car pos;
 	    y = cdr pos in
-	[x:(y-1), (x+1):y, x:(y+1), (x-1):y];
+	[(x,y-1), (x+1,y), (x,y+1), (x-1,y)];
 
 -- get the positions for non-wall fields around loc
 openfieldsat world loc =

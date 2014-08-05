@@ -14,6 +14,7 @@ type Id		=  String
 data Expr	=  CFun Id	-- Combinators
 		|  CNil
 		|  CPair Expr Expr
+                |  CTuple [Expr]
 		|  CNum String
 		|  EVar Id
 		|  ELam Id Expr
