@@ -1,47 +1,64 @@
 module Compile (compileDefns) where
 
 import Prelude hiding (uncurry)
+import Control.Monad.State
 import Expr
 import Gcc
 
 -- compile top-level expressions
 compileDefns :: [(String, Expr)] -> [GccFunction String]
-compileDefns defs = go (tlEnv defs) defs
+compileDefns defs = reverse (eFunctions st)
   where
-    go env [] = reverse (eFunctions env)
-    go env ((name,e):ds) = let (env',code) = cExpr env e
-                               f = GccFunction name (code ++ [I_RTN])
-                           in go (env'{eFunctions = f : eFunctions env'}) ds
+    st = execState (go (tlEnv defs) defs) (CompState 0 [])
+    go env ((name,e):ds) = do code <- cExpr env e
+                              let f = GccFunction name (code ++ [I_RTN])
+                              modify (addFunction f)
+                              go env ds
+    go _ [] = return ()
+
+type Comp = State CompState
+
+genName :: Comp String
+genName = state (tFlip newName)
+
+addFunction :: GccFunction String -> CompState -> CompState
+addFunction f st = st{eFunctions = f : eFunctions st}
+
+anonBlock :: [Instruction String] -> Comp String
+anonBlock code = do name <- genName
+                    modify (addFunction (GccFunction name code))
+                    return name
+
+tFlip :: (a -> (b,c)) -> a -> (c,b)
+tFlip f a = let (b,c) = f a in (c,b)
+
 
 -- Environments
-data Env = Env { eNs :: !Int {- Name supply -},
-                 eFunctions :: [GccFunction String] {- If alternatives -},
-                 eLex :: [[(String, Type)]] {- lexical environment -}
-               }
+data CompState = CompState {
+                   eNs :: !Int {- Name supply -},
+                   eFunctions :: [GccFunction String] {- If alternatives -}
+                 }
+
+newtype Env = Env [[(String, Type)]] {- lexical environment -}
 
 data Type = Local | Global Int
 
 tlEnv :: [(String, Expr)] -> Env
-tlEnv ds =  Env 0 [] [[(n, Global (numArgs e)) | (n,e) <- ds, isUser n]]
+tlEnv ds =  Env [[(n, Global (numArgs e)) | (n,e) <- ds, isUser n]]
   where
     isUser ('_':_) = False
     isUser _ = True
 
-newName :: Env -> (Env, String)
+newName :: CompState -> (CompState, String)
 newName e = let ctr = eNs e
                 name = "_" ++ show ctr
             in (e{eNs=ctr + 1}, name)
 
-anonFunction :: Env -> [Instruction String] -> (Env, String)
-anonFunction env code = let (env', name) = newName env
-                            f = GccFunction name code
-                        in (env'{eFunctions = f : eFunctions env'}, name)
-
 makeFrame :: Env -> [String] -> Env
-makeFrame e ns = e{eLex = map (\n -> (n, Local)) ns : eLex e}
+makeFrame (Env e) ns = Env (map (\n -> (n, Local)) ns : e)
 
 lookupE :: String -> Env -> (Int,Int,Type)
-lookupE x env = go 0 (eLex env)
+lookupE x (Env env) = go 0 env
   where
     go _ [] = error ("unbound name: " ++ x)
     go d (f:fs) = case look x f of
@@ -55,58 +72,49 @@ look x xs = go 0 xs
    go i ((z,t):zs) | x == z = Just (i,t)
                    | otherwise = go (i+1) zs
 
-cExpr :: Env -> Expr -> (Env, [Instruction String])
+cBUILTIN_OPS :: [(String, Instruction String)]
+cBUILTIN_OPS =  [("cons", I_CONS),
+                 ("+", I_ADD), ("-", I_SUB),
+                 ("*", I_MUL), ("/", I_DIV),
+                 ("=", I_CEQ), (">", I_CGT), (">=", I_CGTE)]
 
-cExpr env CNil          = (env, [I_LDC 0])
+cBUILTIN_FUNCTIONS :: [(String, Instruction String)]
+cBUILTIN_FUNCTIONS =  [("car", I_CAR), ("cdr", I_CDR), ("atom", I_ATOM),
+                       ("brk", I_BRK), ("dbug", I_DBUG)]
 
-cExpr env (CFun "cons") = (env, [I_CONS])
-cExpr env (CFun "+")    = (env, [I_ADD])
-cExpr env (CFun "-")    = (env, [I_SUB])
-cExpr env (CFun "*")    = (env, [I_MUL])
-cExpr env (CFun "/")    = (env, [I_DIV])
-cExpr env (CFun "=")    = (env, [I_CEQ])
-cExpr env (CFun ">")    = (env, [I_CGT])
-cExpr env (CFun ">=")   = (env, [I_CGTE])
 
-cExpr env (CNum n) = (env, [I_LDC (read n)])
+cExpr :: Env -> Expr -> Comp [Instruction String]
 
-cExpr env e@(EApp _ _) = cApp env (gApp e)
+cExpr _   CNil          = return [I_LDC 0]
+cExpr _   (CFun f)      = case lookup f cBUILTIN_OPS of
+                            Just instr -> return [instr]
+                            Nothing -> fail ("unknown instruction: " ++ f)
+cExpr _   (CNum n)      = return [I_LDC (read n)]
 
-cExpr env (EIf e c a) =
-  let (env', ce) = cExpr env e
-      (env'', cc) = cExpr env' c
-      (env''', ca) = cExpr env'' a
-      (env4, cLbl) = anonFunction env''' (cc ++ [I_JOIN])
-      (env5, aLbl) = anonFunction env4 (ca ++ [I_JOIN])
-  in (env5, ce ++ [I_SEL cLbl aLbl])
+cExpr env e@(EApp _ _)  = cApp env (gApp e)
+cExpr env (EIf e c a)   = do ce <- cExpr env e
+                             cc <- cExpr env c
+                             ca <- cExpr env a
+                             cLbl <- anonBlock (cc ++ [I_JOIN])
+                             aLbl <- anonBlock (ca ++ [I_JOIN])
+                             return (ce ++ [I_SEL cLbl aLbl])
 
-cExpr env e@(ELam _ _) =
-  let (args, body) = uncurry e
-      (env', code) = cExpr (makeFrame env args) body
-  in (env'{eLex = eLex env}, code)
+cExpr env e@(ELam _ _)  = let (args, body) = uncurry e
+                          in cExpr (makeFrame env args) body
 
-cExpr env (EVar "car")   = (env, [I_CAR])
-cExpr env (EVar "cdr")   = (env, [I_CDR])
-cExpr env (EVar "atom")  = (env, [I_ATOM])
-cExpr env (EVar "brk")   = (env, [I_BRK])
-cExpr env (EVar "dbug")  = (env, [I_DBUG])
-cExpr env (EVar x) = case lookupE x env of
-                       (n,i,Local) -> (env, [I_LD n i x])
-                       (_,_,Global 0) -> (env, [I_LDF x x, I_AP 0])
-                       (_,_,Global _) -> (env, [I_LDF x x])
+cExpr env (EVar x)      =
+  case lookup x cBUILTIN_FUNCTIONS of
+    Just instr -> return [instr]
+    Nothing    ->
+      case lookupE x env of
+        (n,i,Local)    -> return [I_LD n i x]
+        (_,_,Global 0) -> return [I_LDF x x, I_AP 0]
+        (_,_,Global _) -> return [I_LDF x x]
 
-cExpr env (ELet ds e) = let (env', vars) = cExprs env (map snd ds)
-                            (env'', code) = cExpr (makeFrame env' (map fst ds)) e
-                            (env''', lbl) = anonFunction env'' (code ++ [I_RTN])
-                        in (env'''{eLex = eLex env},
-                            vars ++ [I_DUM (length ds), I_LDF lbl lbl, I_RAP (length ds)])
-                           
-cExprs :: Env -> [Expr] -> (Env, [Instruction String])
-cExprs env [] = (env, [])
-cExprs env (e:es) = let (env', c1) = cExpr env e
-                        (env'', cs) = cExprs env' es
-                    in (env'', c1 ++ cs)
-
+cExpr env (ELet ds e)   = do vals <- cExprs env (map snd ds)
+                             body <- cExpr (makeFrame env (map fst ds)) e
+                             lbl  <- anonBlock (body ++ [I_RTN])
+                             return (vals ++ [I_DUM (length ds), I_LDF lbl lbl, I_RAP (length ds)])
 
 numArgs :: Expr -> Int
 numArgs e = length (fst (uncurry e))
@@ -117,26 +125,24 @@ uncurry (ELam x e) = let (ns,body) = uncurry e
 uncurry e          = ([],e)
 
 
-cApp :: Env -> [Expr] -> (Env, [Instruction String])
+cApp :: Env -> [Expr] -> Comp [Instruction String]
 cApp env [CFun "&&", e1, e2] = compileAnd env e1 e2
 cApp env [CFun "||", e1, e2] = compileOr env e1 e2
-cApp env (f:args) = let (e', code) = cArgs env args
-                        (e'', fc) = cExpr e' f
-                        a = arity env f
-                    in
-                       if a /= length args then
-                         error ("wrong number of arguments for function: " ++ show f)
-                       else if needsAP fc
-                        then (e'', code ++ fc ++ [I_AP (length args)])
-                        else (e'', code ++ fc)
-
+cApp env (f:args) = do code <- cExprs env args
+                       fc <- cExpr env f
+                       let a = arity env f
+                       if a /= length args
+                         then fail ("wrong number of arguments to function: " ++ show f)
+                         else if needsAP fc
+                           then return (code ++ fc ++ [I_AP (length args)])
+                           else return (code ++ fc)
 
 -- e1 && e2 ==> if e1 then e2 else 0
-compileAnd :: Env -> Expr -> Expr -> (Env, [Instruction String])
+compileAnd :: Env -> Expr -> Expr -> Comp [Instruction String]
 compileAnd env e1 e2 = cExpr env (EIf e1 e2 (CNum "0"))
 
 -- e1 || e2 ==> if e1 then 1 else e2
-compileOr :: Env -> Expr -> Expr -> (Env, [Instruction String])
+compileOr :: Env -> Expr -> Expr -> Comp [Instruction String]
 compileOr env e1 e2 = cExpr env (EIf e1 (CNum "1") e2)
 
 needsAP :: [Instruction addr] -> Bool
@@ -167,9 +173,6 @@ gApp :: Expr -> [Expr]
 gApp (EApp e1 e2) = gApp e1 ++ [e2]
 gApp e            = [e]
 
-cArgs :: Env -> [Expr] -> (Env, [Instruction String])
-cArgs env [] = (env, [])
-cArgs env (e1:es) = let (e', code) = cExpr env e1
-                        (e'', cs) = cArgs e' es
-                        in (e'', code ++ cs)
-                           
+cExprs :: Env -> [Expr] -> Comp [Instruction String]
+cExprs env es = do iss <- mapM (cExpr env) es
+                   return $ concat iss

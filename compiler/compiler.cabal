@@ -7,7 +7,7 @@ executable gcc
   hs-source-dirs:   gcc
   main-is:          Main.hs
   ghc-options:      -Wall
-  build-depends:    base, parsec
+  build-depends:    base, parsec, mtl
 
 executable ghasm
   hs-source-dirs:   ghasm
